@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#PBS -l walltime=00:10:00,pmem=2580mb,nodes=1:ppn=2
+#PBS -l walltime=00:20:00,pmem=2580mb,nodes=1:ppn=2
 #PBS -m abe
 #PBS -M lynch197@umn.edu
 #PBS -q mesabi
@@ -23,6 +23,6 @@ mpirun -n 2 \
         ~/lab/glowing-happiness/lime/project/hmp/snp/exonic_snps_lasso_mpi.vcf \
         ~/lab/lime/lime/profile/mprof_lime_mpi_output.vcf \
         arcsinsqrt \
-        5 \
+        20 \
         100 \
         no_permutation
