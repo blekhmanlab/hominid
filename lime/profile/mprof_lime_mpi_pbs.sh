@@ -3,8 +3,8 @@
 #PBS -m abe
 #PBS -M lynch197@umn.edu
 #PBS -q mesabi
-#PBS -e /home/jlynch/lab/lime/lime/profile/mprof_lime_mpi_mesabi.stderr
-#PBS -o /home/jlynch/lab/lime/lime/profile/mprof_lime_mpi_mesabi.stdout
+#PBS -e /home/blekhman/jlynch/lab/lime/lime/profile/mprof_lime_mpi_mesabi.stderr
+#PBS -o /home/blekhman/jlynch/lab/lime/lime/profile/mprof_lime_mpi_mesabi.stdout
 
 # do this before module load intel impi
 source anaconda/bin/activate mesabimsi
