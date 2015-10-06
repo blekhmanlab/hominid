@@ -555,6 +555,36 @@ def align_snp_and_taxa(snp_df, taxon_table_df):
     return snp_aligned_to_taxa_dropna_df, taxa_aligned_to_snp_df.T
 
 
+class LassoSingleProcess(LassoMPI):
+    def __init__(self, **kwargs):
+        LassoMPI.__init__(self, **kwargs)
+
+    def go(self):
+        self.initialize_controller()
+        self.complete_snp_task_count = 0
+        with open(self.output_vcf_fp, 'w') as self.output_file, \
+             open(self.output_cv_scores_fp, 'w') as self.output_cv_scores_file:
+             a_task_gen = self.get_task()
+             for a_task in a_task_gen:
+                 if a_task:
+                     a_task.do()
+                 else:
+                     print('all done!')
+
+
+class LassoFactory(object):
+    @classmethod
+    def build(cls, single_process, **kwargs):
+        if single_process:
+            print('building single process lasso')
+            build_cls = LassoSingleProcess
+        else:
+            print('building MPI lasso')
+            build_cls = LassoMPI
+
+        return build_cls(**kwargs)
+
+
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument(
@@ -581,11 +611,18 @@ if __name__ == '__main__':
         'permutation_method',
         type=str
     )
+    arg_parser.add_argument(
+        '--single-process',
+        action='store_true'
+    )
 
     args = arg_parser.parse_args()
     print(args)
 
-    lasso_mpi = LassoMPI(
-        **vars(args)
-    )
-    lasso_mpi.go()
+    lasso = LassoFactory.build(**vars(args))
+    lasso.go()
+
+    #lasso_mpi = LassoMPI(
+    #    **vars(args)
+    #)
+    #lasso_mpi.go()
