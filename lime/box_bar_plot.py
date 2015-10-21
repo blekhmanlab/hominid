@@ -106,38 +106,12 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
     df = pd.read_csv(rvcf_input_file_path, sep='\t')
     #print('df.shape: {}'.format(df.shape))
 
-    sorted_rsq_best_medians_df = df.sort(columns='rsq_median', ascending=False)
+    sorted_rsq_best_medians_df = df.sort_values(by='rsq_median', ascending=False)
 
     #print('df:\n{}'.format(sorted_rsq_best_medians_df.rsq_median.head()))
     #print('df.rsq_median type: {}'.format(sorted_rsq_best_medians_df.rsq_median.dtype))
 
-    """
-    data_name = None
-    data_name_short = None
-    if '16S' in rvcf_input_file_path:
-        data_name = 'HMP 16S'
-        data_name_short = '16S'
-        summary_file_path = os.path.expanduser('~/lab/glowing-happiness/lime/project/hmp/16S_laf_sadj/plots/16S_box_bar_plot_summary.txt')
-    elif '_mpm_' in rvcf_input_file_path:
-        data_name = 'HMP MGS modules'
-        data_name_short = 'modules'
-        summary_file_path = os.path.expanduser('~/lab/glowing-happiness/lime/project/hmp/MGS_humann_mpm_sadj/plots/mgs_modules_box_bar_plot_summary.txt')
-    elif '_mpt_' in rvcf_input_file_path:
-        data_name = 'HMP MGS pathways'
-        data_name_short = 'pathways'
-        summary_file_path = os.path.expanduser('~/lab/glowing-happiness/lime/project/hmp/MGS_human_mpt_sadj/plots/mgs_pathways_box_bar_plot_summary.txt')
-    else:
-        raise Exception('failed to recognize data name in {}'.format(rvcf_input_file_path))
-
-    # read the corresponding taxon table
-    taxon_table_file_path = get_taxon_table_file_path_from_rvcf_file_path(rvcf_input_file_path)
-    if 'synthetic' in taxon_table_file_path:
-        transform = 'normalize'
-    else:
-        transform = 'arcsinsqrt'
-    """
     taxon_table_df = read_taxon_file(taxon_table_file_path, transform=transform)
-
 
     # these are proxies for R functions
     taxon_abundance_box_plot = get_taxon_abundance_box_plot()
@@ -161,7 +135,7 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
             # get the taxon stability selection scores
             # use the taxon table df index to get column names for snp_df
             taxon_scores_df = snp_df.loc[:, taxon_table_df.index].transpose()
-            sorted_taxon_scores_df = taxon_scores_df.sort(taxon_scores_df.columns[0], ascending=False)
+            sorted_taxon_scores_df = taxon_scores_df.sort_values(by=taxon_scores_df.columns[0], ascending=False)
             # print all sorted taxon scores to verify they are sorted high to low
             ##print(sorted_taxon_scores_df)
 
@@ -217,7 +191,8 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
                         'variant_allele_count': rpy2.robjects.StrVector([str(int(v)) for v in aligned_snp_value_list]),
                         'genotype': rpy2.robjects.StrVector([gts[int(v)] for v in aligned_snp_value_list])
                     })
-                    #print(r_df)
+                    print(taxon_name)
+                    print(r_df)
                     taxon_abundance_box_plot(
                         r_df,
                         r_pdf_file_path,
@@ -241,7 +216,6 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
                 #   0...76.0...76.0...76
                 # replace the index
                 p_df.index = range(p_df.shape[0])
-                #p_df.to_csv(file_path, sep='\t')
                 r_all_df = rpy2.robjects.vectors.DataFrame({
                     'abundance': rpy2.robjects.FloatVector(p_df['abundance'].values.tolist()),
                     'variant_allele_count': rpy2.robjects.StrVector([str(int(v)) for v in p_df['variant_allele_count'].values]),
