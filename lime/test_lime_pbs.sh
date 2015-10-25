@@ -9,8 +9,11 @@
 source miniconda/bin/activate venv2_impi
 module load impi
 
+echo $PYTHONPATH
+export PYTHONPATH=~/lab/lime/lime:$PYTHONPATH
+
 mpirun -n 3 \
-    python lime.py \
+    python ~/lab/lime/lime/lime.py \
         ~/lab/lime/example/lime_example_taxon_table_input.txt \
         ~/lab/lime/example/lime_example_snp_input.vcf \
         ~/lab/lime/example/lime_example_output.vcf \
