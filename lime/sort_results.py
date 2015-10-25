@@ -27,8 +27,8 @@ def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
     df = pd.read_csv(rvcf_input_file_path, sep='\t')
     #print('df.shape: {}'.format(df.shape))
 
-    #sorted_rsq_best_medians_df = df.sort_values(by='rsq_median', ascending=False)
-    sorted_rsq_best_medians_df = df.sort(df.columns[0], ascending=False)
+    sorted_rsq_best_medians_df = df.sort_values(by='rsq_median', ascending=False)
+    #sorted_rsq_best_medians_df = df.sort(df.columns[0], ascending=False)
 
     x_df = sorted_rsq_best_medians_df[sorted_rsq_best_medians_df.rsq_median > r_sqr_median_cutoff]
     print('{} SNPs with r_sqr > {:5.3f}'.format(x_df.shape[0], r_sqr_median_cutoff))
@@ -48,8 +48,8 @@ def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
             # get the taxon stability selection scores
             # use the taxon table df index to get column names for snp_df
             taxon_scores_df = snp_df.loc[:, taxon_table_df.index].transpose()
-            #sorted_taxon_scores_df = taxon_scores_df.sort_values(by=taxon_scores_df.columns[0], ascending=False)
-            sorted_taxon_scores_df = taxon_scores_df.sort(taxon_scores_df.columns[0], ascending=False)
+            sorted_taxon_scores_df = taxon_scores_df.sort_values(by=taxon_scores_df.columns[0], ascending=False)
+            #sorted_taxon_scores_df = taxon_scores_df.sort(taxon_scores_df.columns[0], ascending=False)
 
             p_df_list = []
             print('{} {} {:5.3f}'.format(snp_df.iloc[0].GENE, snp_df.iloc[0].ID, snp_df.iloc[0].rsq_median))
