@@ -135,7 +135,8 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
             # get the taxon stability selection scores
             # use the taxon table df index to get column names for snp_df
             taxon_scores_df = snp_df.loc[:, taxon_table_df.index].transpose()
-            sorted_taxon_scores_df = taxon_scores_df.sort_values(by=taxon_scores_df.columns[0], ascending=False)
+            sorted_taxon_scores_df = taxon_scores_df.sort(taxon_scores_df.columns[0], ascending=False)
+            ##sorted_taxon_scores_df = taxon_scores_df.sort_values(by=taxon_scores_df.columns[0], ascending=False)
             # print all sorted taxon scores to verify they are sorted high to low
             ##print(sorted_taxon_scores_df)
 
