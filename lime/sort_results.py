@@ -28,7 +28,6 @@ def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
     #print('df.shape: {}'.format(df.shape))
 
     sorted_rsq_best_medians_df = df.sort_values(by='rsq_median', ascending=False)
-    #sorted_rsq_best_medians_df = df.sort(df.columns[0], ascending=False)
 
     x_df = sorted_rsq_best_medians_df[sorted_rsq_best_medians_df.rsq_median > r_sqr_median_cutoff]
     print('{} SNPs with r_sqr > {:5.3f}'.format(x_df.shape[0], r_sqr_median_cutoff))
@@ -74,23 +73,22 @@ def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
                         snp_df.iloc[0].ALT + snp_df.iloc[0].ALT   # 2
                     ]
                     aligned_snp_value_list = aligned_snp_df.values.flatten().tolist()
-                    p_df = pd.DataFrame({
+                    data_dict = {
                         'chromosome': [snp_df.iloc[0].CHROM] * aligned_snp_df.shape[1],
                         'snp_id': [snp_df.iloc[0].ID] * aligned_snp_df.shape[1],
                         'gene': [snp_df.iloc[0].GENE] * aligned_snp_df.shape[1],
                         'taxon': [selected_taxon] * aligned_snp_df.shape[1],
                         'abundance': aligned_taxa_df[selected_taxon].values.tolist(),
                         'variant_allele_count': [str(int(v)) for v in aligned_snp_value_list],
-                        'genotype': [gts[int(v)] for v in aligned_snp_value_list]
-                    })
+                        'genotype': [gts[int(v)] for v in aligned_snp_value_list],
+                        'sample_id' : aligned_snp_df.columns
+                    }
+                    p_df = pd.DataFrame(data_dict)
                     p_df_list.append(p_df)
                     if no_tables:
                         pass
                     else:
-                        #print(taxon_name)
-                        #print(snp_df.iloc[0].GENE)
-                        #print(snp_df.iloc[0].ID)
-                        p_df[['abundance', 'variant_allele_count', 'genotype']].to_csv(
+                        p_df[['abundance', 'variant_allele_count', 'genotype', 'sample_id']].to_csv(
                             sys.stdout,
                             sep='\t'
                         )
