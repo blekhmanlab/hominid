@@ -20,7 +20,8 @@ from lime import read_taxon_file, align_snp_and_taxa
 
 
 def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
-                 r_sqr_median_cutoff, stability_cutoff, snp_count, no_tables):
+                 r_sqr_median_cutoff, stability_cutoff, snp_count, no_tables,
+                 extra_columns):
     print('plotting {} SNPs from {}'.format(snp_count, rvcf_input_file_path))
 
     # read the rvcf file and sort by rsq_median
@@ -83,12 +84,17 @@ def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
                         'genotype': [gts[int(v)] for v in aligned_snp_value_list],
                         'sample_id' : aligned_snp_df.columns
                     }
+                    columns_to_display = ['abundance', 'variant_allele_count', 'genotype', 'sample_id']
+                    if extra_columns:
+                        for extra_column in extra_columns.split(','):
+                            data_dict[extra_column] = snp_df.iloc[0][extra_column]
+                            columns_to_display.append(extra_column)
                     p_df = pd.DataFrame(data_dict)
                     p_df_list.append(p_df)
                     if no_tables:
                         pass
                     else:
-                        p_df[['abundance', 'variant_allele_count', 'genotype', 'sample_id']].to_csv(
+                        p_df[columns_to_display].to_csv(
                             sys.stdout,
                             sep='\t'
                         )
@@ -127,6 +133,10 @@ if __name__ == '__main__':
     argparser.add_argument(
         '--no-tables',
         action='store_true'
+    )
+    argparser.add_argument(
+        '--extra-columns',
+        type=str
     )
     args = argparser.parse_args()
     print(args)

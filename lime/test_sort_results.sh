@@ -6,4 +6,5 @@ python sort_results.py \
   arcsinsqrt \
   0.05 \
   0.5 \
-  10
+  10 \
+  --extra-columns=GENE,ID
