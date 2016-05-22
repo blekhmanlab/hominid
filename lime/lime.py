@@ -236,17 +236,16 @@ class LassoMPI(object):
                 # this process is the controller
                 # while there are still running workers wait for a work request
                 num_workers = size - 1
-                closed_workers = 0
                 a_task_gen = self.get_task()
                 # need a fake task that is not None to get started
                 a_task = object()
-                while closed_workers < num_workers:
+                while num_workers > 0:
                     msg = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
                     source = status.Get_source()
                     tag = status.Get_tag()
                     print('[controller] recv message from worker {} with tag {}'.format(source, tag))
                     if tag == READY_ and a_task is None:
-                        #if a_task is None there are no more SNPs to test
+                        # if a_task is None there are no more SNPs to test
                         # and we should not call next(a_task_gen) again
                         print('[controller] sending exit message to worker {}'.format(source))
                         comm.send(None, dest=source, tag=EXIT_)
@@ -271,7 +270,7 @@ class LassoMPI(object):
                         ))
                     elif tag == EXIT_:
                         print('[controller] received exit message from worker {}'.format(source))
-                        num_workers = num_workers - 1
+                        num_workers -= 1
                     elif tag == EXCEPTION_:
                         print('[controller] received exception message from worker {} with SNP {} {}'.format(
                             source,
@@ -279,7 +278,7 @@ class LassoMPI(object):
                             msg.snp_with_rsq_df.ID[0]
                         ))
                         self.task_failed(msg)
-                        num_workers = num_workers - 1
+                        num_workers -= 1
                     else:
                         print('[controller] unrecognized message from source {} with tag {}:\n{}'.format(
                             source,
@@ -322,9 +321,8 @@ class LassoMPI(object):
                     comm.send(None, dest=0, tag=EXIT_)
                     break
                 else:
-                    # what is this?
+                    # an unknown message was received - maybe from outer space?
                     print('[worker {}] received an unrecognized message with tag {} - exiting'.format(rank, tag))
-                    #raise Exception('worker {}: unexpected tag: {}'.format(rank, tag))
                     break
 
             worker_t1 = time.time()
@@ -487,7 +485,7 @@ def read_taxon_file(taxon_file_path, transform=None):
     """
     Read a taxon table with taxa on the rows and samples on the columns.
     :param taxon_file_path:
-    :param kwargs:
+    :param transform:
     :return: pandas.DataFrame
     """
     print('loading taxon table file {}'.format(taxon_file_path))
@@ -506,6 +504,8 @@ def read_taxon_file(taxon_file_path, transform=None):
         print('  taxon table has {} columns'.format(len(taxon_table.columns)))
 
         if transform is None:
+            print('no transformation')
+        elif transform == 'no_transform':
             print('no transformation')
         elif transform == 'arcsinsqrt':
             print('applying arcsin sqrt transformation')
@@ -564,12 +564,12 @@ class LassoSingleProcess(LassoMPI):
         self.complete_snp_task_count = 0
         with open(self.output_vcf_fp, 'w') as self.output_file, \
              open(self.output_cv_scores_fp, 'w') as self.output_cv_scores_file:
-             a_task_gen = self.get_task()
-             for a_task in a_task_gen:
-                 if a_task:
-                     a_task.do()
-                 else:
-                     print('all done!')
+            a_task_gen = self.get_task()
+            for a_task in a_task_gen:
+                if a_task:
+                    a_task.do()
+                else:
+                    print('all done!')
 
 
 class LassoFactory(object):
@@ -621,8 +621,3 @@ if __name__ == '__main__':
 
     lasso = LassoFactory.build(**vars(args))
     lasso.go()
-
-    #lasso_mpi = LassoMPI(
-    #    **vars(args)
-    #)
-    #lasso_mpi.go()
