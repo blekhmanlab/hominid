@@ -10,7 +10,8 @@ R and rpy2 disagree about where to find gfortran and cause this:
 
   version `GFORTRAN_1.4' not found (required by /usr/lib/liblapack.so.3)
 
-The solution is to point at the system libgfortran with LD_PRELOAD like this:
+The solution in Ubuntu and related distributions is to point at the
+system libgfortran with LD_PRELOAD like this:
 
   LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libgfortran.so.3.0.0 python box_bar_plot.py <command line arguments>
 
