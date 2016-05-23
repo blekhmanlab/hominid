@@ -3,6 +3,17 @@ Read a rvcf file with stability selection scores for taxa.
 Sort the dataframe by rsq_median.
 Save box and bar plots for the top N SNPS.
 
+Note: R must have packages dplyr and ggplot2 installed.
+
+When using Canopy or Anaconda python distributions it may happen that
+R and rpy2 disagree about where to find gfortran and cause this:
+
+  version `GFORTRAN_1.4' not found (required by /usr/lib/liblapack.so.3)
+
+The solution is to point at the system libgfortran with LD_PRELOAD like this:
+
+  LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libgfortran.so.3.0.0 python box_bar_plot.py <command line arguments>
+
 usage:
     (16S)
     python box_bar_plot_lasso_lars_cv_C_stability_selection_features.py \
@@ -25,6 +36,10 @@ import shutil
 
 import pandas as pd
 
+# the import of readline is a work-around for a
+# compatibility issue between anaconda and rpy2
+# see https://github.com/ContinuumIO/anaconda-issues/issues/152
+import readline
 import rpy2.robjects
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
 
