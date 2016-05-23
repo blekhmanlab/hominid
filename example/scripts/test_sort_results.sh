@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 
-python sort_results.py \
-  ../example/stability_selection_example_output.vcf \
-  ../example/lime_example_taxon_table_input.txt \
+export PYTHONPATH=../../lime:$PYTHONPATH
+
+python ../../lime/sort_results.py \
+  ../stability_selection_example_output.vcf \
+  ../data/lime_example_taxon_table_input.txt \
   arcsinsqrt \
   0.05 \
   0.5 \

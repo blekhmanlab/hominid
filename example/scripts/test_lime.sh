@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# run from lime package directory
+export PYTHONPATH=../../lime:$PYTHONPATH
 
 mpirun -n 3 \
-    python lime.py \
-        ../example/lime_example_taxon_table_input.txt \
-        ../example/lime_example_snp_input.vcf \
-        ../example/lime_example_output.vcf \
+    python ../../lime/lime.py \
+        ../data/lime_example_taxon_table_input.txt \
+        ../data/lime_example_snp_input.vcf \
+        ../lime_example_output.vcf \
         arcsinsqrt \
         -1 \
         100 \
