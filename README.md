@@ -12,4 +12,7 @@ lime is a Python 2.7 MPI program intended to run on a cluster but it will run an
  - scikits.bootstrap
 
 # Use
-See the example directory for a sample bash script and input files.
+See the [wiki pages](https://github.com/jklynch/lime/wiki) for 
+instructions on how to run the software, and the 
+[example directory](https://github.com/jklynch/lime/tree/master/example) for 
+sample bash scripts and input data files.
