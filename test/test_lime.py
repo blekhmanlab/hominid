@@ -21,10 +21,10 @@ def test_cmd_line_1(tmpdir, request):
     log.info('test_lime_fp: {}'.format(test_lime_fp))
     test_lime_dir_path, _ = os.path.splitext(test_lime_fp)
 
-    output_vcf_fp = os.path.join(str(tmpdir), 'lime_example_output.vcf')
+    output_vcf_fp = os.path.join(str(tmpdir), 'lime_example_output.rvcf')
 
     lasso_mpi = LassoMPI(
-        input_vcf_fp=os.path.join(test_lime_dir_path, 'lime_example_snp_input.vcf'),
+        input_vcf_fp=os.path.join(test_lime_dir_path, 'lime_example_snp_input.rvcf'),
         input_taxon_table_fp=os.path.join(test_lime_dir_path, 'lime_example_taxon_table_input.txt'),
         output_vcf_fp=output_vcf_fp,
         permutation_method='no_permutation',
