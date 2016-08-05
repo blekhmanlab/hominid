@@ -20,4 +20,5 @@ mpirun -n 3 \
         arcsinsqrt \
         -1 \
         100 \
-        no_permutation
+        no_permutation \
+        --maf-lower-cutoff 0.2
