@@ -194,12 +194,14 @@ def bootstrap_ci_lo_hi(validation_score_array, alpha=0.05, method='bca', statist
 
 
 class LassoMPI(object):
-    def __init__(self, input_vcf_fp, input_taxon_table_fp, output_vcf_fp, permutation_method,
+    def __init__(self, input_vcf_fp, input_taxon_table_fp, output_vcf_fp,
+                 permutation_method, maf_lower_cutoff,
                  transform=None, snp_limit=-1, cv_count=100):
         self.input_vcf_fp = os.path.expanduser(input_vcf_fp)
         self.input_taxon_table_fp = os.path.expanduser(input_taxon_table_fp)
         self.output_vcf_fp = os.path.expanduser(output_vcf_fp)
         self.permutation_method = permutation_method
+        self.maf_lower_cutoff = maf_lower_cutoff
 
         self.transform = transform
         self.snp_limit = snp_limit
@@ -379,8 +381,8 @@ class LassoMPI(object):
             else:
                 pass
 
-            # maf >= 0.2
-            if snp_with_rsq_df.maf[0] < 0.2:
+            # maf >= 0.2 originally
+            if snp_with_rsq_df.maf[0] < self.maf_lower_cutoff:
                 print('  maf {:3.2f} is too low for {} {}'.format(
                     snp_with_rsq_df.maf[0],
                     snp_df.GENE[0],
@@ -444,10 +446,11 @@ class LassoMPI(object):
 
     def task_complete(self, snp_task):
         self.write_snp_to_file(snp_task.snp_with_rsq_df)
-        self.write_cv_score_list_to_file(snp_task)
+        #self.write_cv_score_list_to_file(snp_task)
 
     def task_failed(self, snp_task):
         self.write_snp_to_file(snp_task.snp_with_rsq_df)
+        self.write_cv_score_list_to_file(snp_task=snp_task)
 
     def write_snp_to_file(self, snp_with_rsq_df):
         header = (self.output_line_count == 0)
@@ -477,7 +480,9 @@ class LassoMPI(object):
         self.output_cv_scores_file.write('\t')
         self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.GENE[0]))
         self.output_cv_scores_file.write('\t')
-        self.output_cv_scores_file.write('\t'.join(['{:9.6f}'.format(cv_score) for cv_score in snp_task.cv_score_list]))
+        self.output_cv_scores_file.write(
+            '\t'.join(['{:9.6f}'.format(cv_score) for cv_score in snp_task.cv_score_list])
+        )
         self.output_cv_scores_file.write('\n')
 
 
@@ -562,8 +567,8 @@ class LassoSingleProcess(LassoMPI):
     def go(self):
         self.initialize_controller()
         self.complete_snp_task_count = 0
-        with open(self.output_vcf_fp, 'w') as self.output_file, \
-             open(self.output_cv_scores_fp, 'w') as self.output_cv_scores_file:
+        with open(self.output_vcf_fp, 'w') as self.output_file:
+            #open(self.output_cv_scores_fp, 'w') as self.output_cv_scores_file:
             a_task_gen = self.get_task()
             for a_task in a_task_gen:
                 if a_task:
@@ -610,6 +615,11 @@ if __name__ == '__main__':
     arg_parser.add_argument(
         'permutation_method',
         type=str
+    )
+    arg_parser.add_argument(
+        '--maf-lower-cutoff',
+        type=float,
+        default=0.2
     )
     arg_parser.add_argument(
         '--single-process',
