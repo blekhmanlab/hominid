@@ -120,12 +120,8 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
 
     # read the rvcf file and sort by rsq_median
     df = pd.read_csv(rvcf_input_file_path, sep='\t')
-    #print('df.shape: {}'.format(df.shape))
 
     sorted_rsq_best_medians_df = df.sort_values(by='rsq_median', ascending=False)
-
-    #print('df:\n{}'.format(sorted_rsq_best_medians_df.rsq_median.head()))
-    #print('df.rsq_median type: {}'.format(sorted_rsq_best_medians_df.rsq_median.dtype))
 
     taxon_table_df = read_taxon_file(taxon_table_file_path, transform=transform)
 
@@ -133,41 +129,29 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
     taxon_abundance_box_plot = get_taxon_abundance_box_plot()
     taxon_abundance_stacked_bar_plot = get_taxon_abundance_stacked_bar_plot()
 
-    #with open(summary_file_path, 'a') as summary_file:
     for row_i in range(sorted_rsq_best_medians_df.shape[0]):
         if row_i >= snp_count:
             break
         else:
             # get a 1-row dataframe
             snp_df = sorted_rsq_best_medians_df.iloc[[row_i]]
-            #print('snp_df.shape {}'.format(snp_df.shape))
-            #print('row {}: rsq_median: {}'.format(row_i, snp_df.iloc[0].rsq_median))
             aligned_snp_df, aligned_taxa_df = align_snp_and_taxa(
                 snp_df,
                 taxon_table_df
             )
-            #print('aligned_snp_df.shape {}'.format(aligned_snp_df.shape))
-            #print('aligned_taxa_df.shape {}'.format(aligned_taxa_df.shape))
             # get the taxon stability selection scores
             # use the taxon table df index to get column names for snp_df
             taxon_scores_df = snp_df.loc[:, taxon_table_df.index].transpose()
             sorted_taxon_scores_df = taxon_scores_df.sort(taxon_scores_df.columns[0], ascending=False)
-            ##sorted_taxon_scores_df = taxon_scores_df.sort_values(by=taxon_scores_df.columns[0], ascending=False)
             # print all sorted taxon scores to verify they are sorted high to low
-            ##print(sorted_taxon_scores_df)
 
             p_df_list = []
             summary_line = '{}\t{}\t'.format(snp_df.iloc[0].GENE, snp_df.iloc[0].ID)
             for i, (selected_taxon, selected_taxon_row) in enumerate(sorted_taxon_scores_df.iterrows()):
                 # use selected_taxon_row.index[0] to index the first and only column
                 selected_taxon_score = selected_taxon_row.iloc[0]
-                #print('taxon: {} score: {}'.format(selected_taxon, selected_taxon_score))
                 if selected_taxon_score < stability_cutoff:
-                    #print('done with selected taxa')
                     break
-                #elif i >= 5:
-                #    print('plotted top 5 features')
-                #    break
                 else:
                     # trim 'Root;' from the front of the taxon name
                     if selected_taxon.startswith('Root;'):
