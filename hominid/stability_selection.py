@@ -3,13 +3,13 @@ Read one or more RVCF files and write new VCF-like files with stability selectio
 
 test on one file:
   python \
-      src/lime/lasso/stability_selection_features_lasso_cv_C.py \
-      ~/lab/glowing-happiness/lime/project/hmp/16S_laf_sadj/mesabi/lasso_lars_cv_C/results/hmp_16S_laf_sadj_anterior_nares/results_mesabi_lasso_lars_cv_C_hmp_16S_laf_sadj_0_anterior_nares.rvcf
+      src/hominid/lasso/stability_selection_features_lasso_cv_C.py \
+      ~/lab/glowing-happiness/hominid/project/hmp/16S_laf_sadj/mesabi/lasso_lars_cv_C/results/hmp_16S_laf_sadj_anterior_nares/results_mesabi_lasso_lars_cv_C_hmp_16S_laf_sadj_0_anterior_nares.rvcf
 
 run on all body sites (don't forget the double quotes around the glob):
   python \
-      src/lime/lasso/stability_selection_features_lasso_cv_C.py \
-      "~/lab/glowing-happiness/lime/project/hmp/16S_laf_sadj/mesabi/lasso_lars_cv_C/results/hmp_16S_laf_sadj_*/results_mesabi_lasso_lars_cv_C_hmp_16S_laf_sadj_0_*.rvcf"
+      src/hominid/lasso/stability_selection_features_lasso_cv_C.py \
+      "~/lab/glowing-happiness/hominid/project/hmp/16S_laf_sadj/mesabi/lasso_lars_cv_C/results/hmp_16S_laf_sadj_*/results_mesabi_lasso_lars_cv_C_hmp_16S_laf_sadj_0_*.rvcf"
 
 """
 import argparse
@@ -24,7 +24,7 @@ from sklearn.linear_model import LassoLarsCV, RandomizedLasso
 from sklearn.cross_validation import StratifiedShuffleSplit
 from sklearn.utils import ConvergenceWarning
 
-from lime import LassoMPI
+from hominid import LassoMPI
 
 
 def stability_selection_features_lasso_cv_C(

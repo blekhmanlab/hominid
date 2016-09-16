@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=../../lime:$PYTHONPATH
+export PYTHONPATH=../../hominid:$PYTHONPATH
 
-python ../../lime/sort_results.py \
+python ../../hominid/sort_results.py \
   ../stability_selection_example_output.rvcf \
-  ../data/lime_example_taxon_table_input.txt \
+  ../data/hominid_example_taxon_table_input.txt \
   arcsinsqrt \
   0.05 \
   0.5 \

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=../../lime:$PYTHONPATH
+export PYTHONPATH=../../hominid:$PYTHONPATH
 
-python ../../lime/box_bar_plot.py \
+python ../../hominid/box_bar_plot.py \
   ../stability_selection_example_output.rvcf \
-  ../data/lime_example_taxon_table_input.txt \
+  ../data/hominid_example_taxon_table_input.txt \
   arcsinsqrt \
   ../box_bar_plots \
   0.5 \

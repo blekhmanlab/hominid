@@ -6,7 +6,7 @@ Print results.
 usage:
     python sort_results.py \
         ../example/stability_selection_example_output.vcf \
-        ../example/lime_example_taxon_table_input.txt \
+        ../example/hominid_example_taxon_table_input.txt \
         arcsinsqrt \
         0.5 \
         10
@@ -16,7 +16,7 @@ import sys
 
 import pandas as pd
 
-from lime import read_taxon_file, align_snp_and_taxa
+from hominid import read_taxon_file, align_snp_and_taxa
 
 
 def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,

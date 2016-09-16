@@ -18,14 +18,14 @@ system libgfortran with LD_PRELOAD like this:
 usage:
     (16S)
     python box_bar_plot_lasso_lars_cv_C_stability_selection_features.py \
-        ~/lab/glowing-happiness/lime/project/hmp/16S_laf_sadj/mesabi/lasso_lars_c_C/results/hmp_16S_laf_sadj_anterior_nares/selected_features_results_mesabi_lasso_lars_cv_C_hmp_16S_laf_sadj_0_anterior_nares.rvcf \
+        ~/lab/glowing-happiness/hominid/project/hmp/16S_laf_sadj/mesabi/lasso_lars_c_C/results/hmp_16S_laf_sadj_anterior_nares/selected_features_results_mesabi_lasso_lars_cv_C_hmp_16S_laf_sadj_0_anterior_nares.rvcf \
         taxon table file path
         transform
         10 <- maximum SNP count
 
     (MGS modules)
     python box_bar_plot_lasso_lars_cv_C_stability_selection_features.py \
-        ~/lab/glowing-happiness/lime/project/hmp/MGS_humann_mpm_sadj/mesabi/lasso_lars_c_C/results/MGS_humann_mpm_sadj_anterior_nares/selected_features_results_mesabi_lasso_lars_cv_C_MGS_humann_mpm_sadj_0_anterior_nares.rvcf \
+        ~/lab/glowing-happiness/hominid/project/hmp/MGS_humann_mpm_sadj/mesabi/lasso_lars_c_C/results/MGS_humann_mpm_sadj_anterior_nares/selected_features_results_mesabi_lasso_lars_cv_C_MGS_humann_mpm_sadj_0_anterior_nares.rvcf \
         taxon table file path
         transform
         10
@@ -44,7 +44,7 @@ import readline
 import rpy2.robjects
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
 
-from lime import read_taxon_file, align_snp_and_taxa
+from hominid import read_taxon_file, align_snp_and_taxa
 
 
 def get_taxon_abundance_box_plot():
