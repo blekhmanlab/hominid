@@ -1,21 +1,17 @@
 # lime
 Python MPI program using LASSO regression to find associations between host genetics and microbiome.
 
-# Requirements
-lime is a Python 2.7 MPI program intended to run on a cluster but it will run anywhere with a working MPI implementation and mpi4py installed.
+# Running the Lasso regression analysis software
 
- - mpi4py
- - numpy
- - pandas
- - SciPy
- - scikit-learn
- - scikits.bootstrap
+You'll want to read these documents, in order:
 
-# Use
-See the [wiki pages](https://github.com/jklynch/lime/wiki) for 
-instructions on how to run the software, and the 
-[example directory](https://github.com/jklynch/lime/tree/master/example) for 
-sample bash scripts and input data files.
-
-The software for the Lasso analysis pipeline is in 
-the [lime directory](https://github.com/jklynch/lime/tree/master/lime).
+1. [Python software requirements](https://github.com/blekhmanlab/hominid/wiki/Requirements)
+2. [Setting up the Python virtual environment](https://github.com/blekhmanlab/hominid/wiki/Set-up-a-virtualenv-on-Linux)
+3. [Lasso regression analysis pipeline](https://github.com/blekhmanlab/hominid/wiki/Lasso-Regression-Analysis-Pipeline)
+4. Running the software on sample data
+   * FINISH: link to file Running-software-on-sample-data.md
+5. [Running `hominid.py` on your data](https://github.com/blekhmanlab/hominid/wiki/Running-hominid-on-your-data)
+6. Running `stability_selection.py` on your data
+   * FINISH: link to file Running-stability-selection-on-your-data.md
+7. Running `sort_results.py` on your data
+   * FINISH: link to file Running-sort-results-on-your-data.md
