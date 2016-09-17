@@ -11,5 +11,4 @@ You'll want to read these documents, in order:
 4. [Running the software on sample data](https://github.com/blekhmanlab/hominid/wiki/Running-software-on-sample-data)
 5. [Running `hominid.py` on your data](https://github.com/blekhmanlab/hominid/wiki/Running-hominid-on-your-data)
 6. [Running `stability_selection.py` on your data](https://github.com/blekhmanlab/hominid/wiki/Running-stability-selection-on-your-data)
-7. Running `sort_results.py` on your data
-   * FINISH: link to file Running-sort-results-on-your-data.md
+7. [Running `sort_results.py` on your data](https://github.com/blekhmanlab/hominid/wiki/Running-sort-results-on-your-data)
