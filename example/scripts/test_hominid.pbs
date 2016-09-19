@@ -1,0 +1,17 @@
+#!/bin/bash -l
+#PBS -l walltime=00:20:00,pmem=2580mb,nodes=1:ppn=3
+#PBS -m abe
+#PBS -M you@yourUniversity.edu
+
+source ~/miniconda2/bin/activate venv_hominid
+
+mpirun -n 3 \
+    python ../../hominid/hominid.py \
+        ../data/hominid_example_taxon_table_input.txt \
+        ../data/hominid_example_snp_input.rvcf \
+        ../hominid_example_output.rvcf \
+        arcsinsqrt \
+        -1 \
+        100 \
+        no_permutation \
+        --maf-lower-cutoff 0.2
