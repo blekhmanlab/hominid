@@ -44,7 +44,7 @@ import readline
 import rpy2.robjects
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
 
-from hominid import read_taxon_file, align_snp_and_taxa
+from hominid.hominid import read_taxon_file, align_snp_and_taxa
 
 
 def get_taxon_abundance_box_plot():
@@ -234,7 +234,7 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
                 )
 
 
-if __name__ == '__main__':
+def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('rvcf_input_file_path')
     argparser.add_argument('taxon_table_file_path')
@@ -251,3 +251,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     print(args)
     box_bar_lasso_lars_cv_C_stability_selection_features(**vars(args))
+
+
+if __name__ == '__main__':
+    main()

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=../../hominid:$PYTHONPATH
-
-(  python ../../hominid/sort_results.py \
+(  hominid_sort_results \
   ../stability_selection_example_output.rvcf \
   ../data/hominid_example_taxon_table_input.txt \
   arcsinsqrt \
@@ -10,4 +8,4 @@ export PYTHONPATH=../../hominid:$PYTHONPATH
   0.5 \
   10 \
   --extra-columns=GENE,ID \
-) >& ../sort_results_example_output
+) > ../sort_results_example_output

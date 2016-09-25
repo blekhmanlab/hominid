@@ -24,7 +24,7 @@ from sklearn.linear_model import LassoLarsCV, RandomizedLasso
 from sklearn.cross_validation import StratifiedShuffleSplit
 from sklearn.utils import ConvergenceWarning
 
-from hominid import LassoMPI
+from hominid.hominid import LassoMPI
 
 
 def stability_selection_features_lasso_cv_C(
@@ -133,7 +133,7 @@ def select_features(aligned_snp_df, aligned_taxa_df, lo_alpha_coef):
     return feature_scores_df, lars_cv.alphas_
 
 
-if __name__ == '__main__':
+def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('rvcf_input_file_path')
     argparser.add_argument('taxon_table_input_file_path')
@@ -155,3 +155,7 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     print(args)
     stability_selection_features_lasso_cv_C(**vars(args))
+
+
+if __name__ == '__main__':
+    main()

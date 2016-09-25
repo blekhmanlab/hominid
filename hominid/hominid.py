@@ -590,7 +590,7 @@ class LassoFactory(object):
         return build_cls(**kwargs)
 
 
-if __name__ == '__main__':
+def main():
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument(
         'input_taxon_table_fp'
@@ -631,3 +631,7 @@ if __name__ == '__main__':
 
     lasso = LassoFactory.build(**vars(args))
     lasso.go()
+
+
+if __name__ == '__main__':
+    main()

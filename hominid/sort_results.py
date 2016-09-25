@@ -16,7 +16,7 @@ import sys
 
 import pandas as pd
 
-from hominid import read_taxon_file, align_snp_and_taxa
+from hominid.hominid import read_taxon_file, align_snp_and_taxa
 
 
 def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
@@ -113,7 +113,7 @@ def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
                 stacked_bar_title = '{}\n{}'.format(snp_df.iloc[0].GENE, snp_df.iloc[0].ID)
 
 
-if __name__ == '__main__':
+def main():
     argparser = argparse.ArgumentParser()
     argparser.add_argument('rvcf_input_file_path')
     argparser.add_argument('taxon_table_file_path')
@@ -141,3 +141,6 @@ if __name__ == '__main__':
     args = argparser.parse_args()
     print(args)
     sort_results(**vars(args))
+
+if __name__ == '__main__':
+    main()

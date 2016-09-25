@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=../../hominid:$PYTHONPATH
-
-python ../../hominid/stability_selection.py \
+hominid_stability_selection \
     ../hominid_example_output.rvcf \
     ../data/hominid_example_taxon_table_input.txt \
     ../stability_selection_example_output.rvcf \

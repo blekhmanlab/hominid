@@ -3,10 +3,10 @@
 #PBS -m abe
 #PBS -M you@yourUniversity.edu
 
-source ~/miniconda2/bin/activate venv_hominid
+source activate venv_hominid
 
 mpirun -n 3 \
-    python ../../hominid/hominid.py \
+    hominid \
         ../data/hominid_example_taxon_table_input.txt \
         ../data/hominid_example_snp_input.rvcf \
         ../hominid_example_output.rvcf \

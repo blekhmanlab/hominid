@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-export PYTHONPATH=../../hominid:$PYTHONPATH
-
-python ../../hominid/box_bar_plot.py \
+hominid_box_bar_plot \
   ../stability_selection_example_output.rvcf \
   ../data/hominid_example_taxon_table_input.txt \
   arcsinsqrt \
