@@ -1,14 +1,14 @@
-# hominid
+# HOMINID
 Python MPI program to identify associations between host genetic variation 
 and microbiome taxonomic composition.
 
-**Summary**: Recent studies have uncovered a strong effect of host genetic variation on the  composition of host-associated microbiota. Here, we present hominid, a computational approach based on Lasso linear regression, that given host genetic variation and microbiome composition data, identifies host SNPs that are correlated with microbial taxa abundances. By using hominid on data from the Human Microbiome Project, we identified 2,158 human SNPs in which genetic variation is correlated with microbiome taxonomic composition in 15 body sites. We also present a tool for visualization of host-microbiome association network identified in hominid.
+**Summary**: Recent studies have uncovered a strong effect of host genetic variation on the  composition of host-associated microbiota. Here, we present HOMINID, a computational approach based on Lasso linear regression, that given host genetic variation and microbiome composition data, identifies host SNPs that are correlated with microbial taxa abundances. By using HOMINID on data from the Human Microbiome Project, we identified 2,158 human SNPs in which genetic variation is correlated with microbiome taxonomic composition in 15 body sites. We also present a tool for visualization of host-microbiome association network identified in HOMINID.
 
 Online visualization tool at http://z.umn.edu/genemicrobe
 
 Contact: blekhmanlab@gmail.com
 
-# Running the Hominid software
+# Running the HOMINID software
 
 You'll want to read these documents, in order:
 
