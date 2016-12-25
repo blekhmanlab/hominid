@@ -514,7 +514,11 @@ def read_taxon_file(taxon_file_path, transform=None):
             print('no transformation')
         elif transform == 'arcsinsqrt':
             print('applying arcsin sqrt transformation')
-            taxon_table = taxon_table.apply(np.sqrt).apply(np.arcsin)
+
+            def f(x):
+                return np.arcsin(np.sign(x) * np.sqrt(np.abs(x)))
+            taxon_table = taxon_table.apply(f)
+            print(taxon_table.head())
         elif transform == 'normalize':
             print('applying normalization transformation')
             taxon_table = taxon_table.div(taxon_table.sum())
