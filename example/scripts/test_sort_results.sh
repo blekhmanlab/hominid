@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+export OMP_NUM_THREADS=1  # each process launches only one thread
+
 (  hominid_sort_results \
   ../stability_selection_example_output.rvcf \
   ../data/hominid_example_taxon_table_input.txt \
