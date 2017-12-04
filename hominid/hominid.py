@@ -26,8 +26,9 @@ import numpy as np
 import pandas as pd
 import scikits.bootstrap
 import scipy.stats
-import sklearn.cross_validation
+import sklearn.exceptions
 import sklearn.linear_model
+import sklearn.model_selection
 from statsmodels.robust.scale import mad
 
 # Define MPI message tags
@@ -54,7 +55,7 @@ class SnpLassoTask(object):
         self.cv_score_list = None
 
     def do(self):
-        print('testing SNP {} {}'.format(self.snp_with_rsq_df.GENE[0], self.snp_with_rsq_df.ID[0]))
+        print('testing SNP {} {}'.format(self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0]))
 
         if self.permutation_method == 'no_permutation':
             y_labels = self.aligned_snp_df.values.flatten()
@@ -68,10 +69,10 @@ class SnpLassoTask(object):
         self.cv_score_list = self.score_cv(y_labels)
         if len(self.cv_score_list) > self.cv_count:
             print('{} {} {} {} has fewer scores than expected: {}'.format(
-                self.snp_with_rsq_df.CHROM[0],
-                self.snp_with_rsq_df.POS[0],
-                self.snp_with_rsq_df.GENE[0],
-                self.snp_with_rsq_df.ID[0],
+                self.snp_with_rsq_df.CHROM.iloc[0],
+                self.snp_with_rsq_df.POS.iloc[0],
+                self.snp_with_rsq_df.GENE.iloc[0],
+                self.snp_with_rsq_df.ID.iloc[0],
                 len(self.cv_score_list)
             ))
         validation_score_array = np.asarray(self.cv_score_list)
@@ -115,19 +116,19 @@ class SnpLassoTask(object):
         self.snp_with_rsq_df.loc[0, 'cv_skewness'] = scipy.stats.skew(validation_score_array)
         self.snp_with_rsq_df.loc[0, 'cv_kurtosis'] = scipy.stats.kurtosis(validation_score_array)
         print('{} {} rsq_mean 95% (pi)  : {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE[0], self.snp_with_rsq_df.ID[0],
+            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
             rsq_mean_pibs95ci_lo, rsq_mean, rsq_mean_pibs95ci_hi
         ))
         print('{} {} rsq_median 95% (pi): {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE[0], self.snp_with_rsq_df.ID[0],
+            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
             rsq_median_pibs95ci_lo, rsq_median, rsq_median_pibs95ci_hi
         ))
         print('{} {} rsq_mean 99% (pi)  : {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE[0], self.snp_with_rsq_df.ID[0],
+            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
             rsq_mean_pibs99ci_lo, rsq_mean, rsq_mean_pibs99ci_hi
         ))
         print('{} {} rsq_median 99% (pi): {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE[0], self.snp_with_rsq_df.ID[0],
+            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
             rsq_median_pibs99ci_lo, rsq_median, rsq_median_pibs99ci_hi
         ))
 
@@ -157,19 +158,26 @@ class SnpLassoTask(object):
 
     def score_cv(self, y_true):
         validation_score_list = []
-        val_skf = sklearn.cross_validation.StratifiedShuffleSplit(
-            y_true,
-            n_iter=self.cv_count,
+        #val_skf = sklearn.cross_validation.StratifiedShuffleSplit(
+        #    y_true,
+        #    n_iter=self.cv_count,
+        #    test_size=0.2
+        #)
+        val_skf = sklearn.model_selection.StratifiedShuffleSplit(
+            n_splits=self.cv_count,
             test_size=0.2
         )
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', sklearn.utils.ConvergenceWarning)
-            for train, test in val_skf:
-                skf = sklearn.cross_validation.StratifiedKFold(
-                    y_true[train],
-                    n_folds=5,
-                    #shuffle=True  # already shuffling above
-                )
+            #warnings.simplefilter('ignore', sklearn.utils.ConvergenceWarning)
+            warnings.simplefilter('ignore', sklearn.exceptions.ConvergenceWarning)
+            #for train, test in val_skf:
+            for train, test in val_skf.split(X=self.aligned_taxa_df.values, y=y_true):
+                # skf = sklearn.cross_validation.StratifiedKFold(
+                #     y_true[train],
+                #     n_folds=5,
+                #     #shuffle=True  # already shuffling above
+                # )
+                skf = sklearn.model_selection.StratifiedKFold(n_splits=5)
                 lasso_lars_cv = sklearn.linear_model.LassoLarsCV(cv=skf)
                 model = lasso_lars_cv.fit(
                     self.aligned_taxa_df.values[train],
@@ -259,8 +267,8 @@ class LassoMPI(object):
                         else:
                             print('[controller] sending a task to worker {} with SNP {} {}'.format(
                                 source,
-                                a_task.snp_with_rsq_df.GENE[0],
-                                a_task.snp_with_rsq_df.ID[0]
+                                a_task.snp_with_rsq_df.GENE.iloc[0],
+                                a_task.snp_with_rsq_df.ID.iloc[0]
                             ))
                             comm.send(a_task, dest=source, tag=START_)
                     elif tag == DONE_:
@@ -276,8 +284,8 @@ class LassoMPI(object):
                     elif tag == EXCEPTION_:
                         print('[controller] received exception message from worker {} with SNP {} {}'.format(
                             source,
-                            msg.snp_with_rsq_df.GENE[0],
-                            msg.snp_with_rsq_df.ID[0]
+                            msg.snp_with_rsq_df.GENE.iloc[0],
+                            msg.snp_with_rsq_df.ID.iloc[0]
                         ))
                         self.task_failed(msg)
                         num_workers -= 1
@@ -352,6 +360,10 @@ class LassoMPI(object):
 
             # check selection criteria
             new_snp_metadata_df, genotype_counter = self.get_new_snp_metadata_df(aligned_snp_df)
+            # if new_snp_metadata_df and snp_df have different indexes they will
+            # stack as different rows when concatenated when what we want is for
+            # them to form a single row
+            new_snp_metadata_df.index = snp_df.index
             if 'rsq_median' in snp_df.columns:
                 print('snp_df already has metadata')
                 snp_with_rsq_df = snp_df
@@ -359,16 +371,16 @@ class LassoMPI(object):
                 snp_with_rsq_df = pd.concat([new_snp_metadata_df, snp_df], axis=1)
 
             print('{} aligned samples for {} {} {}'.format(
-                snp_with_rsq_df.aligned_sample_count[0],
-                snp_df.CHROM[0],
-                snp_df.GENE[0],
-                snp_df.ID[0]
+                snp_with_rsq_df.aligned_sample_count.iloc[0],
+                snp_df.CHROM.iloc[0],
+                snp_df.GENE.iloc[0],
+                snp_df.ID.iloc[0]
             ))
 
             snp_accepted = True
 
-            if snp_with_rsq_df.aligned_sample_count[0] < 50:
-                print('  fewer than 50 aligned samples for {} {}'.format(snp_df.GENE[0], snp_df.ID[0]))
+            if snp_with_rsq_df.aligned_sample_count.iloc[0] < 50:
+                print('  fewer than 50 aligned samples for {} {}'.format(snp_df.GENE.iloc[0], snp_df.ID.iloc[0]))
                 snp_accepted = False
             else:
                 pass
@@ -376,17 +388,17 @@ class LassoMPI(object):
             # greater than 5 of each genotype
             # note: aligned_snp_df dtypes should be 'int64'
             if any([not count > 5 for (genotype, count) in genotype_counter.most_common()]):
-                print('  fewer than 6 samples for at least one genotype {} {}'.format(snp_df.GENE[0], snp_df.ID[0]))
+                print('  fewer than 6 samples for at least one genotype {} {}'.format(snp_df.GENE.iloc[0], snp_df.ID.iloc[0]))
                 snp_accepted = False
             else:
                 pass
 
             # maf >= 0.2 originally
-            if snp_with_rsq_df.maf[0] < self.maf_lower_cutoff:
+            if snp_with_rsq_df.maf.iloc[0] < self.maf_lower_cutoff:
                 print('  maf {:3.2f} is too low for {} {}'.format(
-                    snp_with_rsq_df.maf[0],
-                    snp_df.GENE[0],
-                    snp_df.ID[0]
+                    snp_with_rsq_df.maf.iloc[0],
+                    snp_df.GENE.iloc[0],
+                    snp_df.ID.iloc[0]
                 ))
                 snp_accepted = False
             else:
@@ -472,13 +484,13 @@ class LassoMPI(object):
                 '\t'.join(['cv_s_{}'.format(n) for n in range(len(snp_task.cv_score_list))])
             )
             self.output_cv_scores_file.write('\n')
-        self.output_cv_scores_file.write(snp_task.snp_with_rsq_df.CHROM[0])
+        self.output_cv_scores_file.write(snp_task.snp_with_rsq_df.CHROM.iloc[0])
         self.output_cv_scores_file.write('\t')
-        self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.POS[0]))
+        self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.POS.iloc[0]))
         self.output_cv_scores_file.write('\t')
-        self.output_cv_scores_file.write(snp_task.snp_with_rsq_df.ID[0])
+        self.output_cv_scores_file.write(snp_task.snp_with_rsq_df.ID.iloc[0])
         self.output_cv_scores_file.write('\t')
-        self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.GENE[0]))
+        self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.GENE.iloc[0]))
         self.output_cv_scores_file.write('\t')
         self.output_cv_scores_file.write(
             '\t'.join(['{:9.6f}'.format(cv_score) for cv_score in snp_task.cv_score_list])
