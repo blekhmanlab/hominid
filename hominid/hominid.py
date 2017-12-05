@@ -3,16 +3,7 @@ hominid.py
 
 Python MPI program using LASSO regression to find associations between host genetics and microbiome.
 
-This program is based on example 9 from https://github.com/jbornschein/mpi4py-examples.
-
-This program requires these packages:
-  SciPy
-  scikit-learn
-  scikit-bootstrap
-  statsmodels
-  mpi4py
-  pandas
-
+The MPI aspect of this program is based on example 9 from https://github.com/jbornschein/mpi4py-examples.
 """
 import argparse
 import collections
@@ -100,21 +91,21 @@ class SnpLassoTask(object):
 
         rsq_mean = np.mean(validation_score_array)
 
-        self.snp_with_rsq_df.loc[0, 'rsq_mean'] = rsq_mean
-        self.snp_with_rsq_df.loc[0, 'rsq_std'] = np.std(validation_score_array)
-        self.snp_with_rsq_df.loc[0, 'rsq_sem'] = scipy.stats.sem(validation_score_array)
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_mean_95ci_lo'] = rsq_mean_pibs95ci_lo
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_mean_95ci_hi'] = rsq_mean_pibs95ci_hi
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_mean_99ci_lo'] = rsq_mean_pibs99ci_lo
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_mean_99ci_hi'] = rsq_mean_pibs99ci_hi
-        self.snp_with_rsq_df.loc[0, 'rsq_median'] = rsq_median
-        self.snp_with_rsq_df.loc[0, 'rsq_mad'] = mad(validation_score_array)
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_median_95ci_lo'] = rsq_median_pibs95ci_lo
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_median_95ci_hi'] = rsq_median_pibs95ci_hi
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_median_99ci_lo'] = rsq_median_pibs99ci_lo
-        self.snp_with_rsq_df.loc[0, 'rsq_pibsp_median_99ci_hi'] = rsq_median_pibs99ci_hi
-        self.snp_with_rsq_df.loc[0, 'cv_skewness'] = scipy.stats.skew(validation_score_array)
-        self.snp_with_rsq_df.loc[0, 'cv_kurtosis'] = scipy.stats.kurtosis(validation_score_array)
+        self.snp_with_rsq_df['rsq_mean'] = rsq_mean
+        self.snp_with_rsq_df['rsq_std'] = np.std(validation_score_array)
+        self.snp_with_rsq_df['rsq_sem'] = scipy.stats.sem(validation_score_array)
+        self.snp_with_rsq_df['rsq_pibsp_mean_95ci_lo'] = rsq_mean_pibs95ci_lo
+        self.snp_with_rsq_df['rsq_pibsp_mean_95ci_hi'] = rsq_mean_pibs95ci_hi
+        self.snp_with_rsq_df['rsq_pibsp_mean_99ci_lo'] = rsq_mean_pibs99ci_lo
+        self.snp_with_rsq_df['rsq_pibsp_mean_99ci_hi'] = rsq_mean_pibs99ci_hi
+        self.snp_with_rsq_df['rsq_median'] = rsq_median
+        self.snp_with_rsq_df['rsq_mad'] = mad(validation_score_array)
+        self.snp_with_rsq_df['rsq_pibsp_median_95ci_lo'] = rsq_median_pibs95ci_lo
+        self.snp_with_rsq_df['rsq_pibsp_median_95ci_hi'] = rsq_median_pibs95ci_hi
+        self.snp_with_rsq_df['rsq_pibsp_median_99ci_lo'] = rsq_median_pibs99ci_lo
+        self.snp_with_rsq_df['rsq_pibsp_median_99ci_hi'] = rsq_median_pibs99ci_hi
+        self.snp_with_rsq_df['cv_skewness'] = scipy.stats.skew(validation_score_array)
+        self.snp_with_rsq_df['cv_kurtosis'] = scipy.stats.kurtosis(validation_score_array)
         print('{} {} rsq_mean 95% (pi)  : {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
             self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
             rsq_mean_pibs95ci_lo, rsq_mean, rsq_mean_pibs95ci_hi
@@ -158,25 +149,13 @@ class SnpLassoTask(object):
 
     def score_cv(self, y_true):
         validation_score_list = []
-        #val_skf = sklearn.cross_validation.StratifiedShuffleSplit(
-        #    y_true,
-        #    n_iter=self.cv_count,
-        #    test_size=0.2
-        #)
         val_skf = sklearn.model_selection.StratifiedShuffleSplit(
             n_splits=self.cv_count,
             test_size=0.2
         )
         with warnings.catch_warnings():
-            #warnings.simplefilter('ignore', sklearn.utils.ConvergenceWarning)
             warnings.simplefilter('ignore', sklearn.exceptions.ConvergenceWarning)
-            #for train, test in val_skf:
             for train, test in val_skf.split(X=self.aligned_taxa_df.values, y=y_true):
-                # skf = sklearn.cross_validation.StratifiedKFold(
-                #     y_true[train],
-                #     n_folds=5,
-                #     #shuffle=True  # already shuffling above
-                # )
                 skf = sklearn.model_selection.StratifiedKFold(n_splits=5)
                 lasso_lars_cv = sklearn.linear_model.LassoLarsCV(cv=skf)
                 model = lasso_lars_cv.fit(
@@ -465,6 +444,7 @@ class LassoMPI(object):
         self.write_cv_score_list_to_file(snp_task=snp_task)
 
     def write_snp_to_file(self, snp_with_rsq_df):
+        print('*** write_snp_to_file:\n{}'.format(snp_with_rsq_df))
         header = (self.output_line_count == 0)
         snp_with_rsq_df.to_csv(
             self.output_file,
