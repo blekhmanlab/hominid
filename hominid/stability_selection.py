@@ -21,8 +21,8 @@ import warnings
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LassoLarsCV, RandomizedLasso
-from sklearn.cross_validation import StratifiedShuffleSplit
-from sklearn.utils import ConvergenceWarning
+from sklearn.exceptions import ConvergenceWarning
+from sklearn.model_selection import StratifiedShuffleSplit
 
 from hominid.hominid import LassoMPI
 
@@ -72,11 +72,16 @@ def stability_selection_features_lasso_cv_C(
                 if snp_lasso_task is None:
                     print('all done!')
                     break
-                if snp_lasso_task.snp_with_rsq_df.rsq_pibsp_median_95ci_lo[0] > 0.0:
+
+                if snp_lasso_task.snp_with_rsq_df.rsq_pibsp_median_95ci_lo.iloc[0] > 0.0:
                     snp_count += 1
                     # found a SNP result for feature selection
-                    print('  rsq_median: {:5.4f}'.format(float(snp_lasso_task.snp_with_rsq_df.rsq_median)))
+                    print('  rsq_median: {:5.4f} <-- {:5.4f} --> {:5.4f}'.format(
+                        snp_lasso_task.snp_with_rsq_df.rsq_pibsp_median_95ci_lo.iloc[0],
+                        snp_lasso_task.snp_with_rsq_df.rsq_median.iloc[0],
+                        snp_lasso_task.snp_with_rsq_df.rsq_pibsp_median_95ci_hi.iloc[0]))
                     t0 = time.time()
+
                     feature_scores_df, alphas = select_features(
                         snp_lasso_task.aligned_snp_df,
                         snp_lasso_task.aligned_taxa_df,
@@ -86,7 +91,12 @@ def stability_selection_features_lasso_cv_C(
                     print('time for feature selection: {:4.3f}s'.format(t1-t0))
 
                     feature_scores_df = feature_scores_df.reindex(lasso_mpi.taxon_table_df.index)
+                    # if snp_lasso_task.snp_with_rsq_df and feature_scores_df_t have different
+                    # indexes they will be stacked as two rows by pd.concat, but we want one row
+                    # so force them to have the same index; each one is only one row anyway
+                    feature_scores_df.columns = snp_lasso_task.snp_with_rsq_df.index
                     snp_df = pd.concat([snp_lasso_task.snp_with_rsq_df, feature_scores_df.transpose()], axis=1)
+
                     if snp_count == 1:
                         print('printing header')
                         snp_df.to_csv(
@@ -116,7 +126,8 @@ def select_features(aligned_snp_df, aligned_taxa_df, lo_alpha_coef):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', UserWarning)
         warnings.simplefilter('ignore', ConvergenceWarning)
-        lars_cv = LassoLarsCV(cv=StratifiedShuffleSplit(y, n_iter=100, test_size=0.2)).fit(X, y)
+        #lars_cv = LassoLarsCV(cv=StratifiedShuffleSplit(y, n_iter=100, test_size=0.2)).fit(X, y)
+        lars_cv = LassoLarsCV(cv=StratifiedShuffleSplit(n_splits=100, test_size=0.2)).fit(X, y)
 
     print('lars_cv.alphas_: {}'.format(lars_cv.alphas_))
     alphas = np.linspace(lars_cv.alphas_[0], lo_alpha_coef * lars_cv.alphas_[0], 10)
