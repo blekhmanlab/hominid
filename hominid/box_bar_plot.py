@@ -1,9 +1,17 @@
 """
 Read a rvcf file with stability selection scores for taxa.
 Sort the dataframe by rsq_median.
-Save box and bar plots for the top N SNPS.
+Save box and bar plots for the top N SNPs.
 
 Note: R must have packages dplyr and ggplot2 installed.
+
+I installed rpy2 with conda, which installs R in the virtual environment directory.
+In my case that is ~/miniconda3/envs/hve/lib/R. This takes care of everything needed to
+run this script.
+
+conda install r-essentials
+
+This installs R and packages such as ggplot2 and dplyr.
 
 When using Canopy or Anaconda python distributions it may happen that
 R and rpy2 disagree about where to find gfortran and cause this:
@@ -40,9 +48,14 @@ import pandas as pd
 # the import of readline is a work-around for a
 # compatibility issue between anaconda and rpy2
 # see https://github.com/ContinuumIO/anaconda-issues/issues/152
-import readline
+##import readline
 import rpy2.robjects
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
+
+import rpy2.robjects.lib.ggplot2 as ggplot2
+from rpy2.robjects.packages import importr
+base = importr('base')
+grdevices = importr('grDevices')
 
 from hominid.hominid import read_taxon_file, align_snp_and_taxa
 
@@ -73,6 +86,23 @@ def get_taxon_abundance_box_plot():
         """
     pck = SignatureTranslatedAnonymousPackage(box_plot_fnc, 'pck')
     return pck.taxon_abundance_box_plot
+
+
+def direct_taxon_abundance_box_plot(data, plot_file_path, title, xlabel, ylabel):
+    grdevices.pdf(file=plot_file_path)
+
+    gp = ggplot2.ggplot(data)
+    pp = gp \
+        + ggplot2.aes_string(x='genotype', y='abundance') \
+        + ggplot2.geom_boxplot() \
+        + ggplot2.ggtitle(title) \
+        + ggplot2.labs(x=xlabel, y=ylabel) \
+        + ggplot2.geom_jitter(position=ggplot2.position_jitter(w=0.1)) \
+        + ggplot2.geom_point()
+
+    pp.plot()
+
+    grdevices.dev_off()
 
 
 def get_taxon_abundance_stacked_bar_plot():
@@ -106,6 +136,10 @@ def get_taxon_abundance_stacked_bar_plot():
         """
     pck = SignatureTranslatedAnonymousPackage(box_plot_fnc, 'pck')
     return pck.taxon_abundance_stacked_bar_plot
+
+
+#def direct_abundance_stacked_bar_plot(data, plot_file_path, title, xlabel, ylabel):
+#    pass
 
 
 def box_bar_lasso_lars_cv_C_stability_selection_features(
@@ -142,17 +176,17 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
             # get the taxon stability selection scores
             # use the taxon table df index to get column names for snp_df
             taxon_scores_df = snp_df.loc[:, taxon_table_df.index].transpose()
-            sorted_taxon_scores_df = taxon_scores_df.sort(taxon_scores_df.columns[0], ascending=False)
+            sorted_taxon_scores_df = taxon_scores_df.sort_values(
+                by=taxon_scores_df.columns[0], ascending=False)
             # print all sorted taxon scores to verify they are sorted high to low
-
+            ##print('sorted_taxon_scores_df:\n{}'.format(sorted_taxon_scores_df))
             p_df_list = []
             summary_line = '{}\t{}\t'.format(snp_df.iloc[0].GENE, snp_df.iloc[0].ID)
             for i, (selected_taxon, selected_taxon_row) in enumerate(sorted_taxon_scores_df.iterrows()):
                 # use selected_taxon_row.index[0] to index the first and only column
+                print('selected_taxon_row:\n{}'.format(selected_taxon_row))
                 selected_taxon_score = selected_taxon_row.iloc[0]
-                if selected_taxon_score < stability_cutoff:
-                    break
-                else:
+                if selected_taxon_score >= stability_cutoff:
                     # trim 'Root;' from the front of the taxon name
                     if selected_taxon.startswith('Root;'):
                         taxon_name = selected_taxon[5:]
@@ -170,7 +204,6 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
                                 i
                             )
                         )
-                    #print('writing file {}'.format(r_pdf_file_path))
                     gts = [
                         snp_df.iloc[0].REF + snp_df.iloc[0].REF,  # 0
                         snp_df.iloc[0].REF + snp_df.iloc[0].ALT,  # 1
@@ -193,7 +226,7 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
                         'genotype': rpy2.robjects.StrVector([gts[int(v)] for v in aligned_snp_value_list])
                     })
                     print(taxon_name)
-                    print(r_df)
+                    print('r_df:\n'.format(r_df))
                     taxon_abundance_box_plot(
                         r_df,
                         r_pdf_file_path,
@@ -201,6 +234,10 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
                         '{} {}'.format(snp_df.iloc[0].GENE, snp_df.iloc[0].ID),
                         selected_taxon
                     )
+                else:
+                    # the selected_taxon_score is below the cutoff or is nan
+                    break
+
             # write a summary line and
             print(summary_line[:-2])
             #summary_file.write(summary_line[:-2])
