@@ -21,7 +21,7 @@ it with your own data:
 4. [Running `hominid_sort_results` on your data](https://github.com/blekhmanlab/hominid/wiki/Running-sort-results-on-your-data)
 
 ## Requirements
-`HOMINID` is a Python 2.7/3.5+ MPI program. It is intended to run on a cluster,
+`HOMINID` is a Python 3.6+ MPI program. It is intended to run on a cluster,
 but it will run anywhere with a working MPI implementation and
 [mpi4py](http://mpi4py.readthedocs.io/en/stable/). `HOMINID` has been
 tested only on Linux operating systems.
@@ -31,7 +31,7 @@ The required Python packages will be automatically installed. They are:
  - mpi4py (version 2.0 or greater)
  - numpy
  - pandas
- - SciPy
+ - scipy
  - scikit-learn (version 0.19.1)
  - scikits.bootstrap
 
@@ -75,10 +75,8 @@ $ conda update conda
 
 3. Create a new virtual environment, which will be installed in the ~/miniconda3/envs directory. Here the virtual environment is named `hom` but another name will work.
 ```
-$ conda create -n hom pip
+$ conda create -n hom python=3.6 --file conda-requirements.txt
 ```
-The `r-essentials` packages support the box plot script and are not
-strictly required.
 
 4. Install `HOMINID` in the virtual environment with the following commands:
 ```
@@ -86,8 +84,10 @@ $ git clone https://github.com/blekhmanlab/hominid.git
 $ cd hominid
 $ source activate hom
 (hom) $ pip install -r requirements.txt
-(hom) $ conda install r-essentials
+(hom) $ conda install rpy2 r-essentials
 ```
+The `pip install` command installs the `HOMINID` package itself and a package that is not available to `conda`. The final `conda install` command
+installs the required packages for the optional plotting script.
 
 Once `HOMINID` has been installed with `pip` the scripts can be executed from any directory by name as follows:
 
