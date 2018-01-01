@@ -44,7 +44,7 @@ packages as shown below.
 processors.  It can run on any hardware that supports mpi4py from laptops to clusters.
 
 ## Install
-It is recommended that hominid be installed in a Python virtual environment.
+It is recommended that `HOMINID` be installed in a Python virtual environment.
 These instructions are specifically for the [Miniconda3](https://conda.io/miniconda.html)
 distribution, which has been tested with `HOMINID`.
 
@@ -105,29 +105,29 @@ Test input data files are in directory `hominid/example/data`.
 The installation can be tested using the included test scripts and
 test data with the following steps.
 
-1. Run `HOMINID` on the sample data. Change directory to the `example/scripts` directory and run `test_hominid.sh`.
+1. Run `hominid` on the sample data. Change directory to the `example/scripts` directory and run `test_hominid.sh`.
 ```
-(venv_hominid)$ cd example/scripts
-(venv_hominid)$ ./test_hominid.sh
+(hom)$ cd example/scripts
+(hom)$ ./test_hominid.sh
 ```
 In `test_hominid.sh`, the option `-n 3` to `mpirun` specifies that 3 processes will be used. Change this if you want to use a different number of processes. Performance will be reduced if more processes are specified than available cores. A minimum of two processes must be specified.
 The test output is written to `hominid/example/hominid_example_output.rvcf`.
 Many lines will be printed to `stderr` so you can watch hominid's progress.
 
-2. Run hominid on the sample data, with permuted sample IDs:
+2. Run `hominid` on the sample data, with permuted sample IDs:
 ```
-(venv_hominid)$ ./test_hominid_permute.sh
+(hom)$ ./test_hominid_permute.sh
 ```
 Output is written to `hominid/example/hominid_example_output_permute.rvcf`.
 
 3. Run stability selection to find associated OTUs/taxa/covariates.
 ```
-(venv_hominid)$ ./test_stability_selection.sh
+(hom)$ ./test_stability_selection.sh
 ```
 Output is written to `hominid/example/stability_selection_example_output.rvcf`.
 
 4. Combine the Lasso regression results with the microbiome abundances:
 ```
-(venv_hominid)$ ./test_sort_results.sh
+(hom)$ ./test_sort_results.sh
 ```
 Output is written to `hominid/example/sort_results_example_output`.
