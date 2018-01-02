@@ -73,21 +73,21 @@ $ ./miniconda3.sh
 $ conda update conda
 ```
 
-3. Create a new virtual environment, which will be installed in the ~/miniconda3/envs directory. Here the virtual environment is named `hom` but another name will work.
-```
-$ conda create -n hom python=3.6 --file conda-requirements.txt
-```
-
-4. Install `HOMINID` in the virtual environment with the following commands:
+3. Clone the `hominid` repository.
 ```
 $ git clone https://github.com/blekhmanlab/hominid.git
 $ cd hominid
+```
+
+4. Create a new virtual environment and install the `HOMINID` software. Here the virtual environment is named `hom` but another name will work.
+```
+$ conda create -n hom python=3.6 --file conda-requirements.txt
 $ source activate hom
 (hom) $ pip install -r requirements.txt
 (hom) $ conda install rpy2 r-essentials
 ```
 The `pip install` command installs the `HOMINID` package itself and a package that is not available to `conda`. The final `conda install` command
-installs the required packages for the optional plotting script.
+installs packages for the optional plotting script.
 
 Once `HOMINID` has been installed with `pip` the scripts can be executed from any directory by name as follows:
 
