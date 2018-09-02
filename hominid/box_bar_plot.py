@@ -153,7 +153,7 @@ def box_bar_lasso_lars_cv_C_stability_selection_features(
     os.makedirs(plot_output_dir_path)
 
     # read the rvcf file and sort by rsq_median
-    df = pd.read_csv(rvcf_input_file_path, sep='\t')
+    df = pd.read_csv(rvcf_input_file_path, sep='\t', dtype={'CHROM': str})
 
     sorted_rsq_best_medians_df = df.sort_values(by='rsq_median', ascending=False)
 

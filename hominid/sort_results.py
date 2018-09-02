@@ -25,7 +25,7 @@ def sort_results(rvcf_input_file_path, taxon_table_file_path, transform,
     print('plotting {} SNPs from {}'.format(snp_count, rvcf_input_file_path))
 
     # read the rvcf file and sort by rsq_median
-    df = pd.read_csv(rvcf_input_file_path, sep='\t')
+    df = pd.read_csv(rvcf_input_file_path, sep='\t', dtype={'CHROM': str})
     #print('df.shape: {}'.format(df.shape))
 
     sorted_rsq_best_medians_df = df.sort_values(by='rsq_median', ascending=False)
