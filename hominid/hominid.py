@@ -325,7 +325,7 @@ class LassoMPI(object):
         :return:
         """
         snp_task_count = 0
-        vcf_reader = pd.read_csv(self.input_vcf_fp, sep='\t', chunksize=1)
+        vcf_reader = pd.read_csv(self.input_vcf_fp, sep='\t', chunksize=1, dtype={'CHROM': str})
         for snp_df in vcf_reader:
             # if self.snp_limit is -1 then all SNPs will be processed
             if self.snp_limit == snp_task_count:
@@ -409,7 +409,7 @@ class LassoMPI(object):
         genotype_counter.update(aligned_snp_df.values[0])
         vaf = aligned_snp_df.sum(axis=0).sum() / (2.0 * aligned_snp_df.shape[1])
         maf = min(1.0 - vaf, vaf)
-        new_snp_metadata_df = pd.DataFrame.from_items([
+        new_snp_metadata_df = pd.DataFrame.from_dict(collections.OrderedDict([
             ('aligned_sample_count', [aligned_sample_count]),
             ('aligned_count_0', [genotype_counter[0]]),
             ('aligned_count_1', [genotype_counter[1]]),
@@ -432,7 +432,7 @@ class LassoMPI(object):
             ('rsq_mad', [np.nan]),
             ('cv_skewness', [np.nan]),
             ('cv_kurtosis', [np.nan])
-        ])
+        ]))
         return new_snp_metadata_df, genotype_counter
 
     def task_complete(self, snp_task):
@@ -464,7 +464,7 @@ class LassoMPI(object):
                 '\t'.join(['cv_s_{}'.format(n) for n in range(len(snp_task.cv_score_list))])
             )
             self.output_cv_scores_file.write('\n')
-        self.output_cv_scores_file.write(snp_task.snp_with_rsq_df.CHROM.iloc[0])
+        self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.CHROM.iloc[0]))
         self.output_cv_scores_file.write('\t')
         self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.POS.iloc[0]))
         self.output_cv_scores_file.write('\t')
