@@ -148,6 +148,7 @@ class SnpLassoTask(object):
         return reindexed_permuted_aligned_snp.values.flatten()
 
     def score_cv(self, y_true):
+        print(y_true)
         validation_score_list = []
         val_skf = sklearn.model_selection.StratifiedShuffleSplit(
             n_splits=self.cv_count,
