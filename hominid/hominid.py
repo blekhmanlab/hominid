@@ -148,6 +148,8 @@ class SnpLassoTask(object):
         return reindexed_permuted_aligned_snp.values.flatten()
 
     def score_cv(self, y_true):
+        print('*** aligned_taxa ***')
+        print(self.aligned_taxa_df)
         print('*** y_true ***')
         print(y_true)
         validation_score_list = []
