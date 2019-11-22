@@ -557,6 +557,10 @@ def align_snp_and_taxa(snp_df, taxon_table_df):
 
     # taxa_aligned_to_snp_df is taxon-by-subject, or feature-by-sample
     # we need sample-by-feature for sklearn so return the transpose
+    print("*** snp_aligned_to_taxa_dropna_df.T ***")
+    print(snp_aligned_to_taxa_dropna_df.T)
+    print("*** taxa_aligned_to_snp_df.T ***")
+    print(taxa_aligned_to_snp_df.T)
     return snp_aligned_to_taxa_dropna_df, taxa_aligned_to_snp_df.T
 
 
