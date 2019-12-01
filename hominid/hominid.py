@@ -48,6 +48,7 @@ class SnpLassoTask(object):
     def do(self):
         print('testing SNP {} {}'.format(self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0]))
 
+        print("permutation method: {}".format(self.permutation_method))
         if self.permutation_method == 'no_permutation':
             y_labels = self.aligned_snp_df.values.flatten()
         elif self.permutation_method == 'uniform_permutation':
@@ -160,6 +161,19 @@ class SnpLassoTask(object):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', sklearn.exceptions.ConvergenceWarning)
             for train, test in val_skf.split(X=self.aligned_taxa_df.values, y=y_true):
+                print("*** train indices ***")
+                print(train)
+                print("*** train taxa ***")
+                print(self.aligned_taxa_df.values[train])
+                print("*** train SNP ***")
+                print(y_true[train])
+                print("*** test indices ***")
+                print(y_true)
+                print("*** test taxa ***")
+                print(self.aligned_taxa_df.values[test])
+                print("*** test SNP ***")
+                print(y_true[test])
+
                 skf = sklearn.model_selection.StratifiedKFold(n_splits=5)
                 lasso_lars_cv = sklearn.linear_model.LassoLarsCV(cv=skf)
                 model = lasso_lars_cv.fit(
