@@ -50,7 +50,7 @@ distribution, which has been tested with `HOMINID`.
 
 ### Install a MPI Implementation
 A MPI implementation is available on most clusters so this step is generally
-necessary only on laptop and desktop computers. `HOMINID` is known to run with OpenMPI on Ubuntu 14.04 and Ubuntu 16.04. These commands will install OpenMPI on Ubuntu and similar Debian-based Linux distributions:
+necessary only on laptop and desktop computers. `HOMINID` is known to run with OpenMPI on Ubuntu 14.04, 16.04, and 18.04. These commands will install OpenMPI on Ubuntu and similar Debian-based Linux distributions:
 
 ```
 $ sudo apt update
