@@ -7,6 +7,7 @@ The MPI aspect of this program is based on example 9 from https://github.com/jbo
 """
 import argparse
 import collections
+import datetime
 import os
 import time
 import traceback
@@ -27,17 +28,24 @@ READY_ = 0
 DONE_ = 1
 EXIT_ = 2
 START_ = 3
-EXCEPTION_= 4
+EXCEPTION_ = 4
 
 # Initializations and preliminaries
-comm = MPI.COMM_WORLD # get MPI communicator object
-size = comm.size # total number of processes
-rank = comm.rank # rank of this process
-status = MPI.Status() # get MPI status object
+comm = MPI.COMM_WORLD  # get MPI communicator object
+size = comm.size  # total number of processes
+rank = comm.rank  # rank of this process
+status = MPI.Status()  # get MPI status object
 
 
 class SnpLassoTask(object):
-    def __init__(self, aligned_snp_df, aligned_taxa_df, snp_with_rsq_df, cv_count, permutation_method):
+    def __init__(
+        self,
+        aligned_snp_df,
+        aligned_taxa_df,
+        snp_with_rsq_df,
+        cv_count,
+        permutation_method,
+    ):
         self.aligned_snp_df = aligned_snp_df
         self.aligned_taxa_df = aligned_taxa_df
         self.snp_with_rsq_df = snp_with_rsq_df
@@ -46,82 +54,56 @@ class SnpLassoTask(object):
         self.cv_score_list = None
 
     def do(self):
-        print('testing SNP {} {}'.format(self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0]))
+        # print('testing SNP {} {}'.format(self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0]))
 
-        if self.permutation_method == 'no_permutation':
+        if self.permutation_method == "no_permutation":
             y_labels = self.aligned_snp_df.values.flatten()
-        elif self.permutation_method == 'uniform_permutation':
+        elif self.permutation_method == "uniform_permutation":
             y_labels = self.uniform_snp_permutation()
-        elif self.permutation_method == 'group_permutation':
+        elif self.permutation_method == "group_permutation":
             y_labels = self.group_snp_permutation()
         else:
-            raise Exception('unknown permutation_method {}'.format(self.permutation_method))
+            raise Exception(
+                "unknown permutation_method {}".format(self.permutation_method)
+            )
 
         self.cv_score_list = self.score_cv(y_labels)
-        if len(self.cv_score_list) > self.cv_count:
-            print('{} {} {} {} has fewer scores than expected: {}'.format(
-                self.snp_with_rsq_df.CHROM.iloc[0],
-                self.snp_with_rsq_df.POS.iloc[0],
-                self.snp_with_rsq_df.GENE.iloc[0],
-                self.snp_with_rsq_df.ID.iloc[0],
-                len(self.cv_score_list)
-            ))
         validation_score_array = np.asarray(self.cv_score_list)
 
         (rsq_mean_pibs95ci_lo, rsq_mean_pibs95ci_hi) = bootstrap_ci_lo_hi(
-            validation_score_array, alpha=0.05, method='pi'
+            validation_score_array, alpha=0.05, method="pi"
         )
         (rsq_mean_pibs99ci_lo, rsq_mean_pibs99ci_hi) = bootstrap_ci_lo_hi(
-            validation_score_array, alpha=0.01, method='pi'
+            validation_score_array, alpha=0.01, method="pi"
         )
 
         rsq_median = np.median(validation_score_array)
         (rsq_median_pibs95ci_lo, rsq_median_pibs95ci_hi) = bootstrap_ci_lo_hi(
-            validation_score_array,
-            alpha=0.05,
-            statistic=np.median,
-            method='pi'
+            validation_score_array, alpha=0.05, statistic=np.median, method="pi"
         )
         (rsq_median_pibs99ci_lo, rsq_median_pibs99ci_hi) = bootstrap_ci_lo_hi(
-            validation_score_array,
-            alpha=0.01,
-            statistic=np.median,
-            method='pi'
+            validation_score_array, alpha=0.01, statistic=np.median, method="pi"
         )
 
         rsq_mean = np.mean(validation_score_array)
 
-        self.snp_with_rsq_df['rsq_mean'] = rsq_mean
-        self.snp_with_rsq_df['rsq_std'] = np.std(validation_score_array)
-        self.snp_with_rsq_df['rsq_sem'] = scipy.stats.sem(validation_score_array)
-        self.snp_with_rsq_df['rsq_pibsp_mean_95ci_lo'] = rsq_mean_pibs95ci_lo
-        self.snp_with_rsq_df['rsq_pibsp_mean_95ci_hi'] = rsq_mean_pibs95ci_hi
-        self.snp_with_rsq_df['rsq_pibsp_mean_99ci_lo'] = rsq_mean_pibs99ci_lo
-        self.snp_with_rsq_df['rsq_pibsp_mean_99ci_hi'] = rsq_mean_pibs99ci_hi
-        self.snp_with_rsq_df['rsq_median'] = rsq_median
-        self.snp_with_rsq_df['rsq_mad'] = mad(validation_score_array)
-        self.snp_with_rsq_df['rsq_pibsp_median_95ci_lo'] = rsq_median_pibs95ci_lo
-        self.snp_with_rsq_df['rsq_pibsp_median_95ci_hi'] = rsq_median_pibs95ci_hi
-        self.snp_with_rsq_df['rsq_pibsp_median_99ci_lo'] = rsq_median_pibs99ci_lo
-        self.snp_with_rsq_df['rsq_pibsp_median_99ci_hi'] = rsq_median_pibs99ci_hi
-        self.snp_with_rsq_df['cv_skewness'] = scipy.stats.skew(validation_score_array)
-        self.snp_with_rsq_df['cv_kurtosis'] = scipy.stats.kurtosis(validation_score_array)
-        print('{} {} rsq_mean 95% (pi)  : {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
-            rsq_mean_pibs95ci_lo, rsq_mean, rsq_mean_pibs95ci_hi
-        ))
-        print('{} {} rsq_median 95% (pi): {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
-            rsq_median_pibs95ci_lo, rsq_median, rsq_median_pibs95ci_hi
-        ))
-        print('{} {} rsq_mean 99% (pi)  : {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
-            rsq_mean_pibs99ci_lo, rsq_mean, rsq_mean_pibs99ci_hi
-        ))
-        print('{} {} rsq_median 99% (pi): {:6.4f} <-- {:6.4f} --> {:6.4f}'.format(
-            self.snp_with_rsq_df.GENE.iloc[0], self.snp_with_rsq_df.ID.iloc[0],
-            rsq_median_pibs99ci_lo, rsq_median, rsq_median_pibs99ci_hi
-        ))
+        self.snp_with_rsq_df["rsq_mean"] = rsq_mean
+        self.snp_with_rsq_df["rsq_std"] = np.std(validation_score_array)
+        self.snp_with_rsq_df["rsq_sem"] = scipy.stats.sem(validation_score_array)
+        self.snp_with_rsq_df["rsq_pibsp_mean_95ci_lo"] = rsq_mean_pibs95ci_lo
+        self.snp_with_rsq_df["rsq_pibsp_mean_95ci_hi"] = rsq_mean_pibs95ci_hi
+        self.snp_with_rsq_df["rsq_pibsp_mean_99ci_lo"] = rsq_mean_pibs99ci_lo
+        self.snp_with_rsq_df["rsq_pibsp_mean_99ci_hi"] = rsq_mean_pibs99ci_hi
+        self.snp_with_rsq_df["rsq_median"] = rsq_median
+        self.snp_with_rsq_df["rsq_mad"] = mad(validation_score_array)
+        self.snp_with_rsq_df["rsq_pibsp_median_95ci_lo"] = rsq_median_pibs95ci_lo
+        self.snp_with_rsq_df["rsq_pibsp_median_95ci_hi"] = rsq_median_pibs95ci_hi
+        self.snp_with_rsq_df["rsq_pibsp_median_99ci_lo"] = rsq_median_pibs99ci_lo
+        self.snp_with_rsq_df["rsq_pibsp_median_99ci_hi"] = rsq_median_pibs99ci_hi
+        self.snp_with_rsq_df["cv_skewness"] = scipy.stats.skew(validation_score_array)
+        self.snp_with_rsq_df["cv_kurtosis"] = scipy.stats.kurtosis(
+            validation_score_array
+        )
 
     def uniform_snp_permutation(self):
         y_true = self.aligned_snp_df.values.flatten()
@@ -130,12 +112,14 @@ class SnpLassoTask(object):
         return permuted_y_true
 
     def group_snp_permutation(self):
-        taxa_groups_by_sex = self.aligned_taxa_df.groupby('Sex')
+        taxa_groups_by_sex = self.aligned_taxa_df.groupby("Sex")
         if len(taxa_groups_by_sex) == 2:
             # everything is good
             pass
         else:
-            raise Exception('unexpected number of groups: {}'.format(len(taxa_groups_by_sex)))
+            raise Exception(
+                "unexpected number of groups: {}".format(len(taxa_groups_by_sex))
+            )
 
         permuted_group_list = []
         for name, group in taxa_groups_by_sex:
@@ -144,46 +128,54 @@ class SnpLassoTask(object):
             permuted_group_snp_sr = pd.DataFrame(group_snp_copy, index=group.index)
             permuted_group_list.append(permuted_group_snp_sr)
         permuted_aligned_snp = pd.concat(permuted_group_list, axis=0).transpose()
-        reindexed_permuted_aligned_snp = permuted_aligned_snp.reindex_like(self.aligned_snp_df)
+        reindexed_permuted_aligned_snp = permuted_aligned_snp.reindex_like(
+            self.aligned_snp_df
+        )
         return reindexed_permuted_aligned_snp.values.flatten()
 
     def score_cv(self, y_true):
+        # test ValueError handling
+        if np.random.random() < 0.5:
+            raise ValueError("testing!")
+
         validation_score_list = []
         val_skf = sklearn.model_selection.StratifiedShuffleSplit(
-            n_splits=self.cv_count,
-            test_size=0.2
+            n_splits=self.cv_count, test_size=0.2
         )
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore', sklearn.exceptions.ConvergenceWarning)
+            warnings.simplefilter("ignore", sklearn.exceptions.ConvergenceWarning)
             for train, test in val_skf.split(X=self.aligned_taxa_df.values, y=y_true):
                 skf = sklearn.model_selection.StratifiedKFold(n_splits=5)
                 lasso_lars_cv = sklearn.linear_model.LassoLarsCV(cv=skf)
                 model = lasso_lars_cv.fit(
-                    self.aligned_taxa_df.values[train],
-                    y_true[train]
+                    self.aligned_taxa_df.values[train], y_true[train]
                 )
-                score = model.score(
-                    self.aligned_taxa_df.values[test],
-                    y_true[test]
-                )
+                score = model.score(self.aligned_taxa_df.values[test], y_true[test])
                 validation_score_list.append(score)
 
         return validation_score_list
 
 
-def bootstrap_ci_lo_hi(validation_score_array, alpha=0.05, method='bca', statistic=np.mean):
+def bootstrap_ci_lo_hi(
+    validation_score_array, alpha=0.05, method="bca", statistic=np.mean
+):
     return scikits.bootstrap.ci(
-        data=validation_score_array,
-        statfunction=statistic,
-        alpha=alpha,
-        method=method
+        data=validation_score_array, statfunction=statistic, alpha=alpha, method=method
     )
 
 
 class LassoMPI(object):
-    def __init__(self, input_vcf_fp, input_taxon_table_fp, output_vcf_fp,
-                 permutation_method, maf_lower_cutoff,
-                 transform=None, snp_limit=-1, cv_count=100):
+    def __init__(
+        self,
+        input_vcf_fp,
+        input_taxon_table_fp,
+        output_vcf_fp,
+        permutation_method,
+        maf_lower_cutoff,
+        transform=None,
+        snp_limit=-1,
+        cv_count=100,
+    ):
         self.input_vcf_fp = os.path.expanduser(input_vcf_fp)
         self.input_taxon_table_fp = os.path.expanduser(input_taxon_table_fp)
         self.output_vcf_fp = os.path.expanduser(output_vcf_fp)
@@ -201,16 +193,14 @@ class LassoMPI(object):
         output_vcf_dir_path, output_vcf_name = os.path.split(self.output_vcf_fp)
         output_vcf_base_name, output_vcf_ext = os.path.splitext(output_vcf_name)
         self.output_cv_scores_fp = os.path.join(
-            output_vcf_dir_path,
-            output_vcf_base_name + '_cv_scores.txt'
+            output_vcf_dir_path, output_vcf_base_name + "_cv_scores.txt"
         )
         self.output_cv_scores_file = None
         self.complete_snp_task_count = None
 
     def initialize_controller(self):
         self.taxon_table_df = read_taxon_file(
-            self.input_taxon_table_fp,
-            transform=self.transform
+            self.input_taxon_table_fp, transform=self.transform
         )
 
     def initialize_worker(self):
@@ -220,8 +210,9 @@ class LassoMPI(object):
         if rank == 0:
             self.initialize_controller()
             self.complete_snp_task_count = 0
-            with open(self.output_vcf_fp, 'w') as self.output_file, \
-                 open(self.output_cv_scores_fp, 'w') as self.output_cv_scores_file:
+            with open(self.output_vcf_fp, "w") as self.output_file, open(
+                self.output_cv_scores_fp, "w"
+            ) as self.output_cv_scores_file:
                 # this process is the controller
                 # while there are still running workers wait for a work request
                 num_workers = size - 1
@@ -229,93 +220,278 @@ class LassoMPI(object):
                 # need a fake task that is not None to get started
                 a_task = object()
                 while num_workers > 0:
-                    msg = comm.recv(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
+                    msg = comm.recv(
+                        source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status
+                    )
                     source = status.Get_source()
                     tag = status.Get_tag()
-                    print('[controller] recv message from worker {} with tag {}'.format(source, tag))
+                    print(
+                        "[controller {}] recv message from worker {} with tag {}".format(
+                            datetime.datetime.now().isoformat(), source, tag
+                        )
+                    )
                     if tag == READY_ and a_task is None:
                         # if a_task is None there are no more SNPs to test
                         # and we should not call next(a_task_gen) again
-                        print('[controller] sending exit message to worker {}'.format(source))
+                        print(
+                            "[controller {}] sending exit message to worker {}".format(
+                                datetime.datetime.now().isoformat(), source
+                            )
+                        )
                         comm.send(None, dest=source, tag=EXIT_)
                     elif tag == READY_ and a_task is not None:
                         a_task = next(a_task_gen)
                         if a_task is None:
-                            print('[controller] sending exit message to worker {}'.format(source))
+                            print(
+                                "[controller {}] sending exit message to worker {}".format(
+                                    datetime.datetime.now().isoformat(), source
+                                )
+                            )
                             comm.send(None, dest=source, tag=EXIT_)
                         else:
-                            print('[controller] sending a task to worker {} with SNP {} {}'.format(
-                                source,
-                                a_task.snp_with_rsq_df.GENE.iloc[0],
-                                a_task.snp_with_rsq_df.ID.iloc[0]
-                            ))
+                            print(
+                                "[controller {}] sending a task to worker {} with SNP {} {}".format(
+                                    datetime.datetime.now().isoformat(),
+                                    source,
+                                    a_task.snp_with_rsq_df.GENE.iloc[0],
+                                    a_task.snp_with_rsq_df.ID.iloc[0],
+                                )
+                            )
                             comm.send(a_task, dest=source, tag=START_)
                     elif tag == DONE_:
                         # save the results
                         self.complete_snp_task_count += 1
                         self.task_complete(msg)
-                        print('[controller] received a processed task from worker {}'.format(
-                            source
-                        ))
+                        print(
+                            "[controller {}] received a processed task from worker {}".format(
+                                datetime.datetime.now().isoformat(), source
+                            )
+                        )
                     elif tag == EXIT_:
-                        print('[controller] received exit message from worker {}'.format(source))
+                        print(
+                            "[controller {}] received exit message from worker {}".format(
+                                datetime.datetime.now().isoformat(), source
+                            )
+                        )
                         num_workers -= 1
                     elif tag == EXCEPTION_:
-                        print('[controller] received exception message from worker {} with SNP {} {}'.format(
-                            source,
-                            msg.snp_with_rsq_df.GENE.iloc[0],
-                            msg.snp_with_rsq_df.ID.iloc[0]
-                        ))
+                        print(
+                            "[controller {}] received exception message from worker {} with SNP {} {}".format(
+                                datetime.datetime.now().isoformat(),
+                                source,
+                                msg.snp_with_rsq_df.GENE.iloc[0],
+                                msg.snp_with_rsq_df.ID.iloc[0],
+                            )
+                        )
                         self.task_failed(msg)
-                        num_workers -= 1
+                        # num_workers -= 1
                     else:
-                        print('[controller] unrecognized message from source {} with tag {}:\n{}'.format(
-                            source,
-                            tag,
-                            msg
-                        ))
-                print('[controller] all workers have exited')
+                        print(
+                            "[controller {}] unrecognized message from source {} with tag {}:\n{}".format(
+                                datetime.datetime.now().isoformat(), source, tag, msg
+                            )
+                        )
+                print(
+                    "[controller {}] all workers have exited".format(
+                        datetime.datetime.now().isoformat()
+                    )
+                )
         else:
             # this process is a worker
             self.initialize_worker()
             worker_t0 = time.time()
             task_count = 0
             name = MPI.Get_processor_name()
-            print("[worker {}] running on {}".format(rank, name))
+            print(
+                "[worker {} {}] running on {}".format(
+                    rank, datetime.datetime.now().isoformat(), name
+                )
+            )
             while True:
-                print('[worker {}] sending request for work'.format(rank))
+                print(
+                    "[worker {} {}] sending request for work".format(
+                        rank, datetime.datetime.now().isoformat()
+                    )
+                )
                 comm.send(None, dest=0, tag=READY_)
-                print('[worker {}] waiting for work'.format(rank))
+                print(
+                    "[worker {} {}] waiting for work".format(
+                        rank, datetime.datetime.now().isoformat()
+                    )
+                )
                 t0 = time.time()
                 my_task = comm.recv(source=0, tag=MPI.ANY_TAG, status=status)
                 t1 = time.time()
-                print('[worker {}] waited {:4.2f}s for work'.format(rank, t1-t0))
+                print(
+                    "[worker {} {}] waited {:4.2f}s for work".format(
+                        rank, datetime.datetime.now().isoformat(), t1 - t0
+                    )
+                )
                 tag = status.Get_tag()
-                print('[worker {}] received message with tag {}'.format(rank, tag))
+                print(
+                    "[worker {} {}] received message with tag {}".format(
+                        rank, datetime.datetime.now().isoformat(), tag
+                    )
+                )
                 if tag == START_:
-                    try:
-                        t0 = time.time()
-                        my_task.do()
-                        t1 = time.time()
-                        print('[worker {}] task time: {:5.2f}s'.format(rank, t1-t0))
-                        comm.send(my_task, dest=0, tag=DONE_)
-                        task_count += 1
-                    except Exception as e:
-                        print('[worker {}] quitting with exception'.format(rank))
-                        traceback.print_exc()
-                        comm.send(my_task, dest=0, tag=EXCEPTION_)
-                        break
+                    # try up to three times
+                    for attempt in range(3):
+                        print(
+                            "[worker {} {}] attempt {}".format(
+                                rank, datetime.datetime.now().isoformat(), attempt + 1
+                            )
+                        )
+                        try:
+                            print(
+                                "[worker {} {}] testing SNP {} {}".format(
+                                    rank,
+                                    datetime.datetime.now().isoformat(),
+                                    my_task.snp_with_rsq_df.GENE.iloc[0],
+                                    my_task.snp_with_rsq_df.ID.iloc[0],
+                                )
+                            )
+                            t0 = time.time()
+                            my_task.do()
+                            t1 = time.time()
+                            print(
+                                "[worker {} {}] task time: {:5.2f}s".format(
+                                    rank, datetime.datetime.now().isoformat(), t1 - t0
+                                )
+                            )
+                            print(
+                                "[worker {} {}] {} {} rsq_mean 95% (pi)  : {:6.4f} <-- {:6.4f} --> {:6.4f}".format(
+                                    rank,
+                                    datetime.datetime.now().isoformat(),
+                                    my_task.snp_with_rsq_df.GENE.iloc[0],
+                                    my_task.snp_with_rsq_df.ID.iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_mean_95ci_lo"
+                                    ].iloc[0],
+                                    my_task.snp_with_rsq_df["rsq_mean"].iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_mean_95ci_hi"
+                                    ].iloc[0],
+                                )
+                            )
+                            print(
+                                "[worker {} {}] {} {} rsq_median 95% (pi): {:6.4f} <-- {:6.4f} --> {:6.4f}".format(
+                                    rank,
+                                    datetime.datetime.now().isoformat(),
+                                    my_task.snp_with_rsq_df.GENE.iloc[0],
+                                    my_task.snp_with_rsq_df.ID.iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_median_95ci_lo"
+                                    ].iloc[0],
+                                    my_task.snp_with_rsq_df["rsq_median"].iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_median_95ci_hi"
+                                    ].iloc[0],
+                                )
+                            )
+                            print(
+                                "[worker {} {}] {} {} rsq_mean 99% (pi)  : {:6.4f} <-- {:6.4f} --> {:6.4f}".format(
+                                    rank,
+                                    datetime.datetime.now().isoformat(),
+                                    my_task.snp_with_rsq_df.GENE.iloc[0],
+                                    my_task.snp_with_rsq_df.ID.iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_mean_99ci_lo"
+                                    ].iloc[0],
+                                    my_task.snp_with_rsq_df["rsq_mean"].iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_mean_99ci_hi"
+                                    ].iloc[0],
+                                )
+                            )
+                            print(
+                                "[worker {} {}] {} {} rsq_median 99% (pi): {:6.4f} <-- {:6.4f} --> {:6.4f}".format(
+                                    rank,
+                                    datetime.datetime.now().isoformat(),
+                                    my_task.snp_with_rsq_df.GENE.iloc[0],
+                                    my_task.snp_with_rsq_df.ID.iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_median_99ci_lo"
+                                    ].iloc[0],
+                                    my_task.snp_with_rsq_df["rsq_median"].iloc[0],
+                                    my_task.snp_with_rsq_df[
+                                        "rsq_pibsp_median_99ci_hi"
+                                    ].iloc[0],
+                                )
+                            )
+                            comm.send(my_task, dest=0, tag=DONE_)
+                            task_count += 1
+                            # break out of the attempt loop
+                            break
+                        # make another attempt in the case of exceptions like this:
+                        #     ValueError: shapes (362,101) and (100,) not aligned: 101 (dim 1) != 100 (dim 0)
+                        except ValueError as ve:
+                            t1 = time.time()
+                            print(
+                                "[worker {} {}] task time: {:5.2f}s".format(
+                                    rank, datetime.datetime.now().isoformat(), t1 - t0
+                                )
+                            )
+                            print(
+                                "[worker {} {}] reporting exception".format(
+                                    rank, datetime.datetime.now().isoformat()
+                                )
+                            )
+                            print(traceback.format_exc())
+                            traceback.print_exc()
+                            # try again if fewer than 3 attempts
+                            if attempt == 2:
+                                print(
+                                    "[worker {} {}] giving up".format(
+                                        rank, datetime.datetime.now().isoformat()
+                                    )
+                                )
+                                comm.send(my_task, dest=0, tag=EXCEPTION_)
+                                # break out of the attempt loop
+                                break
+                        # do not make further attempts for other exceptions
+                        except BaseException as e:
+                            t1 = time.time()
+                            print(
+                                "[worker {} {}] task time: {:5.2f}s".format(
+                                    rank, datetime.datetime.now().isoformat(), t1 - t0
+                                )
+                            )
+                            print(
+                                "[worker {} {}] reporting exception".format(
+                                    rank, datetime.datetime.now().isoformat()
+                                )
+                            )
+                            print(traceback.format_exc())
+                            traceback.print_exc()
+                            comm.send(my_task, dest=0, tag=EXCEPTION_)
+                            # break out of the attempt loop
+                            break
                 elif tag == EXIT_:
-                    print('[worker {}] received exit message'.format(rank))
+                    print(
+                        "[worker {} {}] received exit message".format(
+                            rank, datetime.datetime.now().isoformat()
+                        )
+                    )
                     comm.send(None, dest=0, tag=EXIT_)
                     break
                 else:
                     # an unknown message was received - maybe from outer space?
-                    print('[worker {}] received an unrecognized message with tag {} - exiting'.format(rank, tag))
+                    print(
+                        "[worker {} {}] received an unrecognized message with tag {} - exiting".format(
+                            rank, datetime.datetime.now().isoformat(), tag
+                        )
+                    )
                     break
 
             worker_t1 = time.time()
-            print('[worker {}] exiting after {} tasks in  {:6.2f}s'.format(rank, task_count, worker_t1-worker_t0))
+            print(
+                "[worker {} {}] exiting after {} tasks in  {:6.2f}s".format(
+                    rank,
+                    datetime.datetime.now().isoformat(),
+                    task_count,
+                    worker_t1 - worker_t0,
+                )
+            )
 
     def get_task(self):
         """
@@ -325,60 +501,82 @@ class LassoMPI(object):
         :return:
         """
         snp_task_count = 0
-        vcf_reader = pd.read_csv(self.input_vcf_fp, sep='\t', chunksize=1, dtype={'CHROM': str})
+        vcf_reader = pd.read_csv(
+            self.input_vcf_fp, sep="\t", chunksize=1, dtype={"CHROM": str}
+        )
         for snp_df in vcf_reader:
             # if self.snp_limit is -1 then all SNPs will be processed
             if self.snp_limit == snp_task_count:
-                print('SNP limit {} has been reached'.format(snp_task_count))
+                print("SNP limit {} has been reached".format(snp_task_count))
                 break
 
+            # looking for a particular SNP
+            # if not snp_df.ID.iloc[0].endswith("75183751"):
+            #    snp_task_count += 1
+            #    continue
+
             aligned_snp_df, aligned_taxa_df = align_snp_and_taxa(
-                snp_df,
-                self.taxon_table_df
+                snp_df, self.taxon_table_df
             )
 
             # check selection criteria
-            new_snp_metadata_df, genotype_counter = self.get_new_snp_metadata_df(aligned_snp_df)
+            new_snp_metadata_df, genotype_counter = self.get_new_snp_metadata_df(
+                aligned_snp_df
+            )
             # if new_snp_metadata_df and snp_df have different indexes they will
             # stack as different rows when concatenated when what we want is for
             # them to form a single row
             new_snp_metadata_df.index = snp_df.index
-            if 'rsq_median' in snp_df.columns:
-                print('snp_df already has metadata')
+            if "rsq_median" in snp_df.columns:
+                print("snp_df already has metadata")
                 snp_with_rsq_df = snp_df
             else:
                 snp_with_rsq_df = pd.concat([new_snp_metadata_df, snp_df], axis=1)
 
-            print('{} aligned samples for {} {} {}'.format(
-                snp_with_rsq_df.aligned_sample_count.iloc[0],
-                snp_df.CHROM.iloc[0],
-                snp_df.GENE.iloc[0],
-                snp_df.ID.iloc[0]
-            ))
+            print(
+                "{} aligned samples for {} {} {}".format(
+                    snp_with_rsq_df.aligned_sample_count.iloc[0],
+                    snp_df.CHROM.iloc[0],
+                    snp_df.GENE.iloc[0],
+                    snp_df.ID.iloc[0],
+                )
+            )
 
             snp_accepted = True
 
             if snp_with_rsq_df.aligned_sample_count.iloc[0] < 50:
-                print('  fewer than 50 aligned samples for {} {}'.format(snp_df.GENE.iloc[0], snp_df.ID.iloc[0]))
+                print(
+                    "  fewer than 50 aligned samples for {} {}".format(
+                        snp_df.GENE.iloc[0], snp_df.ID.iloc[0]
+                    )
+                )
                 snp_accepted = False
             else:
                 pass
 
             # greater than 5 of each genotype
             # note: aligned_snp_df dtypes should be 'int64'
-            if any([not count > 5 for (genotype, count) in genotype_counter.most_common()]):
-                print('  fewer than 6 samples for at least one genotype {} {}'.format(snp_df.GENE.iloc[0], snp_df.ID.iloc[0]))
+            if any(
+                [not count > 5 for (genotype, count) in genotype_counter.most_common()]
+            ):
+                print(
+                    "  fewer than 6 samples for at least one genotype {} {}".format(
+                        snp_df.GENE.iloc[0], snp_df.ID.iloc[0]
+                    )
+                )
                 snp_accepted = False
             else:
                 pass
 
             # maf >= 0.2 originally
             if snp_with_rsq_df.maf.iloc[0] < self.maf_lower_cutoff:
-                print('  maf {:3.2f} is too low for {} {}'.format(
-                    snp_with_rsq_df.maf.iloc[0],
-                    snp_df.GENE.iloc[0],
-                    snp_df.ID.iloc[0]
-                ))
+                print(
+                    "  maf {:3.2f} is too low for {} {}".format(
+                        snp_with_rsq_df.maf.iloc[0],
+                        snp_df.GENE.iloc[0],
+                        snp_df.ID.iloc[0],
+                    )
+                )
                 snp_accepted = False
             else:
                 pass
@@ -390,7 +588,7 @@ class LassoMPI(object):
                     aligned_taxa_df=aligned_taxa_df,
                     snp_with_rsq_df=snp_with_rsq_df,
                     cv_count=self.cv_count,
-                    permutation_method=self.permutation_method
+                    permutation_method=self.permutation_method,
                 )
                 snp_task_count += 1
                 yield snp_task
@@ -409,73 +607,81 @@ class LassoMPI(object):
         genotype_counter.update(aligned_snp_df.values[0])
         vaf = aligned_snp_df.sum(axis=0).sum() / (2.0 * aligned_snp_df.shape[1])
         maf = min(1.0 - vaf, vaf)
-        new_snp_metadata_df = pd.DataFrame.from_dict(collections.OrderedDict([
-            ('aligned_sample_count', [aligned_sample_count]),
-            ('aligned_count_0', [genotype_counter[0]]),
-            ('aligned_count_1', [genotype_counter[1]]),
-            ('aligned_count_2', [genotype_counter[2]]),
-            ('vaf', [vaf]),
-            ('maf', [maf]),
-            # using np.nan gives these columns type float
-            ('rsq_mean', [np.nan]),
-            ('rsq_pibsp_mean_95ci_lo', [np.nan]),
-            ('rsq_pibsp_mean_95ci_hi', [np.nan]),
-            ('rsq_pibsp_mean_99ci_lo', [np.nan]),
-            ('rsq_pibsp_mean_99ci_hi', [np.nan]),
-            ('rsq_pibsp_median_95ci_lo', [np.nan]),
-            ('rsq_pibsp_median_95ci_hi', [np.nan]),
-            ('rsq_pibsp_median_99ci_lo', [np.nan]),
-            ('rsq_pibsp_median_99ci_hi', [np.nan]),
-            ('rsq_std', [np.nan]),
-            ('rsq_sem', [np.nan]),
-            ('rsq_median', [np.nan]),
-            ('rsq_mad', [np.nan]),
-            ('cv_skewness', [np.nan]),
-            ('cv_kurtosis', [np.nan])
-        ]))
+        new_snp_metadata_df = pd.DataFrame.from_dict(
+            collections.OrderedDict(
+                [
+                    ("aligned_sample_count", [aligned_sample_count]),
+                    ("aligned_count_0", [genotype_counter[0]]),
+                    ("aligned_count_1", [genotype_counter[1]]),
+                    ("aligned_count_2", [genotype_counter[2]]),
+                    ("vaf", [vaf]),
+                    ("maf", [maf]),
+                    # using np.nan gives these columns type float
+                    ("rsq_mean", [np.nan]),
+                    ("rsq_pibsp_mean_95ci_lo", [np.nan]),
+                    ("rsq_pibsp_mean_95ci_hi", [np.nan]),
+                    ("rsq_pibsp_mean_99ci_lo", [np.nan]),
+                    ("rsq_pibsp_mean_99ci_hi", [np.nan]),
+                    ("rsq_pibsp_median_95ci_lo", [np.nan]),
+                    ("rsq_pibsp_median_95ci_hi", [np.nan]),
+                    ("rsq_pibsp_median_99ci_lo", [np.nan]),
+                    ("rsq_pibsp_median_99ci_hi", [np.nan]),
+                    ("rsq_std", [np.nan]),
+                    ("rsq_sem", [np.nan]),
+                    ("rsq_median", [np.nan]),
+                    ("rsq_mad", [np.nan]),
+                    ("cv_skewness", [np.nan]),
+                    ("cv_kurtosis", [np.nan]),
+                ]
+            )
+        )
         return new_snp_metadata_df, genotype_counter
 
     def task_complete(self, snp_task):
         self.write_snp_to_file(snp_task.snp_with_rsq_df)
-        #self.write_cv_score_list_to_file(snp_task)
+        self.write_cv_score_list_to_file(snp_task=snp_task)
 
     def task_failed(self, snp_task):
         self.write_snp_to_file(snp_task.snp_with_rsq_df)
         self.write_cv_score_list_to_file(snp_task=snp_task)
 
     def write_snp_to_file(self, snp_with_rsq_df):
-        print('*** write_snp_to_file:\n{}'.format(snp_with_rsq_df))
-        header = (self.output_line_count == 0)
+        header = self.output_line_count == 0
         snp_with_rsq_df.to_csv(
             self.output_file,
             index=False,
             header=header,
-            sep='\t',
-            na_rep='NA',
-            float_format='%6.4f'
+            sep="\t",
+            na_rep="NA",
+            float_format="%6.4f",
         )
         self.output_line_count += 1
 
     def write_cv_score_list_to_file(self, snp_task):
         if self.complete_snp_task_count == 1:
             # write the column headers
-            self.output_cv_scores_file.write('CHROM\tPOS\tID\tGENE\t')
+            self.output_cv_scores_file.write("CHROM\tPOS\tID\tGENE\t")
             self.output_cv_scores_file.write(
-                '\t'.join(['cv_s_{}'.format(n) for n in range(len(snp_task.cv_score_list))])
+                "\t".join(["cv_s_{}".format(n) for n in range(self.cv_count)])
             )
-            self.output_cv_scores_file.write('\n')
+            self.output_cv_scores_file.write("\n")
         self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.CHROM.iloc[0]))
-        self.output_cv_scores_file.write('\t')
+        self.output_cv_scores_file.write("\t")
         self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.POS.iloc[0]))
-        self.output_cv_scores_file.write('\t')
+        self.output_cv_scores_file.write("\t")
         self.output_cv_scores_file.write(snp_task.snp_with_rsq_df.ID.iloc[0])
-        self.output_cv_scores_file.write('\t')
+        self.output_cv_scores_file.write("\t")
         self.output_cv_scores_file.write(str(snp_task.snp_with_rsq_df.GENE.iloc[0]))
-        self.output_cv_scores_file.write('\t')
+        self.output_cv_scores_file.write("\t")
+        if snp_task.cv_score_list is None:
+            # this can happen when a snp task fails
+            snp_task.cv_score_list = [-1.0] * self.cv_count
         self.output_cv_scores_file.write(
-            '\t'.join(['{:9.6f}'.format(cv_score) for cv_score in snp_task.cv_score_list])
+            "\t".join(
+                ["{:9.6f}".format(cv_score) for cv_score in snp_task.cv_score_list]
+            )
         )
-        self.output_cv_scores_file.write('\n')
+        self.output_cv_scores_file.write("\n")
 
 
 def read_taxon_file(taxon_file_path, transform=None):
@@ -485,37 +691,34 @@ def read_taxon_file(taxon_file_path, transform=None):
     :param transform:
     :return: pandas.DataFrame
     """
-    print('loading taxon table file {}'.format(taxon_file_path))
+    print("loading taxon table file {}".format(taxon_file_path))
     if not os.path.exists(taxon_file_path):
         error_msg = 'file does not exist:\n  "{}"'.format(taxon_file_path)
         print(error_msg)
         raise Exception(error_msg)
     else:
-        taxon_table = pd.read_csv(
-            taxon_file_path,
-            sep='\t',
-            comment='#',
-            index_col=0
-        )
-        print('  taxon table has {} rows'.format(len(taxon_table.index)))
-        print('  taxon table has {} columns'.format(len(taxon_table.columns)))
+        taxon_table = pd.read_csv(taxon_file_path, sep="\t", comment="#", index_col=0,)
+        print("  taxon table has {} rows".format(len(taxon_table.index)))
+        print("  taxon table has {} columns".format(len(taxon_table.columns)))
+        print("  taxon table values have type {}".format(taxon_table.values.dtype))
 
         if transform is None:
-            print('no transformation')
-        elif transform == 'no_transform':
-            print('no transformation')
-        elif transform == 'arcsinsqrt':
-            print('applying arcsin sqrt transformation')
+            print("no transformation")
+        elif transform == "no_transform":
+            print("no transformation")
+        elif transform == "arcsinsqrt":
+            print("applying arcsin sqrt transformation")
 
             def f(x):
                 return np.arcsin(np.sign(x) * np.sqrt(np.abs(x)))
+
             taxon_table = taxon_table.apply(f)
             print(taxon_table.head())
-        elif transform == 'normalize':
-            print('applying normalization transformation')
+        elif transform == "normalize":
+            print("applying normalization transformation")
             taxon_table = taxon_table.div(taxon_table.sum())
         else:
-            raise Exception('unrecognized transform {}'.format(transform))
+            raise Exception("unrecognized transform {}".format(transform))
 
         return taxon_table
 
@@ -563,24 +766,24 @@ class LassoSingleProcess(LassoMPI):
     def go(self):
         self.initialize_controller()
         self.complete_snp_task_count = 0
-        with open(self.output_vcf_fp, 'w') as self.output_file:
-            #open(self.output_cv_scores_fp, 'w') as self.output_cv_scores_file:
+        with open(self.output_vcf_fp, "w") as self.output_file:
+            # open(self.output_cv_scores_fp, 'w') as self.output_cv_scores_file:
             a_task_gen = self.get_task()
             for a_task in a_task_gen:
                 if a_task:
                     a_task.do()
                 else:
-                    print('all done!')
+                    print("all done!")
 
 
 class LassoFactory(object):
     @classmethod
     def build(cls, single_process, **kwargs):
         if single_process:
-            print('building single process lasso')
+            print("building single process lasso")
             build_cls = LassoSingleProcess
         else:
-            print('building MPI lasso')
+            print("building MPI lasso")
             build_cls = LassoMPI
 
         return build_cls(**kwargs)
@@ -588,39 +791,15 @@ class LassoFactory(object):
 
 def main():
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument(
-        'input_taxon_table_fp'
-    )
-    arg_parser.add_argument(
-        'input_vcf_fp'
-    )
-    arg_parser.add_argument(
-        'output_vcf_fp'
-    )
-    arg_parser.add_argument(
-        'transform'
-    )
-    arg_parser.add_argument(
-        'snp_limit',
-        type=int
-    )
-    arg_parser.add_argument(
-        'cv_count',
-        type=int
-    )
-    arg_parser.add_argument(
-        'permutation_method',
-        type=str
-    )
-    arg_parser.add_argument(
-        '--maf-lower-cutoff',
-        type=float,
-        default=0.2
-    )
-    arg_parser.add_argument(
-        '--single-process',
-        action='store_true'
-    )
+    arg_parser.add_argument("input_taxon_table_fp")
+    arg_parser.add_argument("input_vcf_fp")
+    arg_parser.add_argument("output_vcf_fp")
+    arg_parser.add_argument("transform")
+    arg_parser.add_argument("snp_limit", type=int)
+    arg_parser.add_argument("cv_count", type=int)
+    arg_parser.add_argument("permutation_method", type=str)
+    arg_parser.add_argument("--maf-lower-cutoff", type=float, default=0.2)
+    arg_parser.add_argument("--single-process", action="store_true")
 
     args = arg_parser.parse_args()
     print(args)
@@ -629,5 +808,5 @@ def main():
     lasso.go()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

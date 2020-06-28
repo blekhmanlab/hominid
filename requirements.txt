@@ -1,2 +1,7 @@
+numpy
+pandas
+scipy
 scikit-learn==0.19.1
--e .
+scikits.bootstrap
+statsmodels
+mpi4py
