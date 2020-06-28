@@ -82,7 +82,7 @@ $ cd hominid
 4. Create a new virtual environment and install the `HOMINID` software. Here the virtual environment is named `hom` but another name will work.
 ```
 $ conda create -n hom python=3.6 --file conda-requirements.txt
-$ source activate hom
+$ conda activate hom
 (hom) $ pip install -r requirements.txt
 (hom) $ conda install rpy2 r-essentials
 ```
