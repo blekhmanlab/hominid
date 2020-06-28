@@ -83,7 +83,7 @@ $ cd hominid
 ```
 $ conda create -n hom python=3.6 --file conda-requirements.txt
 $ conda activate hom
-(hom) $ pip install -r requirements.txt
+(hom) $ pip install .
 (hom) $ conda install rpy2 r-essentials
 ```
 The `pip install` command installs the `HOMINID` package itself and a package that is not available to `conda`. The final `conda install` command
