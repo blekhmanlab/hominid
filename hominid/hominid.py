@@ -135,8 +135,8 @@ class SnpLassoTask(object):
 
     def score_cv(self, y_true):
         # test ValueError handling
-        if np.random.random() < 0.5:
-            raise ValueError("testing!")
+        # if np.random.random() < 0.5:
+        #     raise ValueError("testing!")
 
         validation_score_list = []
         val_skf = sklearn.model_selection.StratifiedShuffleSplit(
